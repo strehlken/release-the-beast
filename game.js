@@ -540,20 +540,67 @@ const Game = {
     const container = document.getElementById("intro-text");
     container.innerHTML = "";
 
-    for (let i = 0; i < lines.length; i++) {
-      await new Promise(r => setTimeout(r, lines[i] === "..." ? 600 : 900));
+    let currentLine = 0;
+    let timer = null;
+    let skipRequested = false;
+
+    const addLine = () => {
+      if (currentLine >= lines.length) return;
       const p = document.createElement("p");
-      p.textContent = lines[i];
+      p.textContent = lines[currentLine];
       p.classList.add("intro-line");
       container.appendChild(p);
       container.scrollTop = container.scrollHeight;
-    }
+      currentLine++;
+    };
 
-    await new Promise(r => setTimeout(r, 1000));
-    document.getElementById("intro-continue").classList.remove("hidden");
+    const scheduleNext = () => {
+      if (currentLine >= lines.length) {
+        // All lines shown — reveal Continue button
+        document.getElementById("intro-continue").classList.remove("hidden");
+        document.getElementById("intro-continue").focus();
+        return;
+      }
+      const delay = lines[currentLine] === "..." ? 600 : 900;
+      timer = setTimeout(() => {
+        addLine();
+        scheduleNext();
+      }, delay);
+    };
+
+    const advance = (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+
+      if (currentLine >= lines.length) {
+        // Already at end — act like clicking Continue
+        cleanup();
+        this.showCorridor();
+        return;
+      }
+
+      // Cancel pending timer and show next line immediately
+      if (timer) { clearTimeout(timer); timer = null; }
+      addLine();
+      scheduleNext();
+    };
+
+    const cleanup = () => {
+      document.removeEventListener("keydown", advance);
+      if (timer) { clearTimeout(timer); timer = null; }
+    };
+
+    document.addEventListener("keydown", advance);
+
+    // Continue button
     document.getElementById("intro-continue").addEventListener("click", () => {
+      cleanup();
       this.showCorridor();
     });
+
+    // Start the sequence
+    addLine();
+    scheduleNext();
   }
 };
 

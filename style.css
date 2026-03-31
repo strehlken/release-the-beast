@@ -35,8 +35,8 @@ html, body {
   background: var(--black);
   color: var(--text-light);
   font-family: var(--pixel-font);
-  font-size: 10px;
-  line-height: 1.8;
+  font-size: 16px;
+  line-height: 1.6;
   overflow: hidden;
 }
 
@@ -86,7 +86,7 @@ body::after {
 
 .title-logo {
   color: var(--torch-orange);
-  font-size: 18px;
+  font-size: 28px;
   text-shadow:
     0 0 10px rgba(230, 126, 34, 0.5),
     0 0 30px rgba(230, 126, 34, 0.2);
@@ -95,9 +95,9 @@ body::after {
 
 .title-logo .sub {
   display: block;
-  font-size: 10px;
+  font-size: 14px;
   color: var(--text-dim);
-  margin-top: 8px;
+  margin-top: 12px;
 }
 
 @keyframes flicker {
@@ -117,8 +117,8 @@ body::after {
 
 .btn {
   font-family: var(--pixel-font);
-  font-size: 10px;
-  padding: 12px 24px;
+  font-size: 16px;
+  padding: 16px 32px;
   border: 2px solid var(--stone-light);
   background: var(--stone-dark);
   color: var(--text-light);
@@ -126,7 +126,7 @@ body::after {
   transition: all 0.15s;
   text-transform: uppercase;
   letter-spacing: 1px;
-  min-width: 240px;
+  min-width: 280px;
 }
 
 .btn:hover {
@@ -164,8 +164,8 @@ body::after {
 }
 
 .intro-line {
-  font-size: 10px;
-  margin-bottom: 6px;
+  font-size: 16px;
+  margin-bottom: 8px;
   animation: fadeIn 0.6s ease-out;
   color: var(--text-light);
 }
@@ -174,8 +174,15 @@ body::after {
   color: var(--text-bright);
 }
 
+.intro-skip-hint {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 20px;
+  opacity: 0.6;
+}
+
 #intro-continue {
-  margin-top: 30px;
+  margin-top: 16px;
 }
 
 /* === CORRIDOR SCREEN === */
@@ -196,7 +203,7 @@ body::after {
 }
 
 .corridor-title {
-  font-size: 11px;
+  font-size: 18px;
   color: var(--torch-orange);
   text-shadow: 0 0 8px rgba(230, 126, 34, 0.4);
 }
@@ -210,7 +217,7 @@ body::after {
 }
 
 #beast-status-text {
-  font-size: 9px;
+  font-size: 14px;
   color: var(--text-dim);
   font-style: italic;
   transition: color 0.5s;
@@ -219,7 +226,7 @@ body::after {
 .beast-meter {
   width: 100%;
   max-width: 400px;
-  height: 12px;
+  height: 16px;
   background: var(--stone-dark);
   border: 2px solid var(--stone-light);
   margin: 8px auto;
@@ -247,7 +254,7 @@ body::after {
 }
 
 .solve-count {
-  font-size: 8px;
+  font-size: 13px;
   color: var(--text-dim);
   margin-top: 4px;
 }
@@ -276,12 +283,12 @@ body::after {
 }
 
 .cell-door .cell-label {
-  font-size: 8px;
+  font-size: 14px;
   color: var(--text-dim);
 }
 
 .cell-door .cell-lock {
-  font-size: 7px;
+  font-size: 12px;
   color: var(--blood-red);
   margin-top: 4px;
 }
@@ -310,12 +317,12 @@ body::after {
 }
 
 .door .door-num {
-  font-size: 14px;
+  font-size: 20px;
   color: var(--text-bright);
 }
 
 .door .door-label {
-  font-size: 6px;
+  font-size: 10px;
   color: var(--text-dim);
   margin-top: 4px;
 }
@@ -343,7 +350,7 @@ body::after {
   position: absolute;
   top: 4px;
   right: 6px;
-  font-size: 10px;
+  font-size: 16px;
   color: var(--green-bright);
 }
 
@@ -363,7 +370,7 @@ body::after {
   position: absolute;
   top: 4px;
   right: 6px;
-  font-size: 10px;
+  font-size: 16px;
   color: var(--blood-red);
 }
 
@@ -380,12 +387,12 @@ body::after {
 }
 
 .beast-chamber .beast-label {
-  font-size: 9px;
+  font-size: 14px;
   color: var(--text-dim);
 }
 
 .beast-chamber .beast-icon {
-  font-size: 20px;
+  font-size: 28px;
   margin: 6px 0;
   opacity: 0.3;
   transition: opacity 0.5s;
@@ -445,14 +452,14 @@ body::after {
 }
 
 .puzzle-header h2 {
-  font-size: 11px;
+  font-size: 20px;
   color: var(--torch-orange);
 }
 
 .puzzle-header h3 {
-  font-size: 9px;
+  font-size: 14px;
   color: var(--text-dim);
-  margin-top: 4px;
+  margin-top: 6px;
   font-weight: normal;
 }
 
@@ -469,23 +476,23 @@ body::after {
 .puzzle-inscription-box::before {
   content: "~ INSCRIPTION ~";
   position: absolute;
-  top: -10px;
+  top: -12px;
   left: 50%;
   transform: translateX(-50%);
   background: var(--stone-mid);
   padding: 0 10px;
-  font-size: 7px;
+  font-size: 11px;
   color: var(--text-dim);
 }
 
 #puzzle-inscription {
-  font-size: 10px;
+  font-size: 16px;
   color: var(--text-bright);
   line-height: 2;
 }
 
 #puzzle-flavor {
-  font-size: 8px;
+  font-size: 13px;
   color: var(--text-dim);
   font-style: italic;
   margin-top: 12px;
@@ -503,8 +510,8 @@ body::after {
 
 #puzzle-answer {
   font-family: var(--pixel-font);
-  font-size: 14px;
-  padding: 12px 20px;
+  font-size: 20px;
+  padding: 14px 24px;
   background: var(--stone-dark);
   border: 2px solid var(--stone-light);
   color: var(--text-bright);
@@ -524,12 +531,12 @@ body::after {
 }
 
 #puzzle-attempts {
-  font-size: 8px;
+  font-size: 13px;
   color: var(--text-dim);
 }
 
 .puzzle-feedback {
-  font-size: 9px;
+  font-size: 14px;
   min-height: 40px;
   padding: 10px;
   text-align: center;
@@ -561,26 +568,26 @@ body::after {
 }
 
 .puzzle-save-code .code-label {
-  font-size: 8px;
+  font-size: 14px;
   color: var(--gold);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 #save-code-value {
-  font-size: 16px;
+  font-size: 24px;
   color: var(--gold);
-  letter-spacing: 3px;
+  letter-spacing: 4px;
   text-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
 }
 
 .puzzle-save-code .code-hint {
-  font-size: 7px;
+  font-size: 12px;
   color: var(--text-dim);
   margin-top: 8px;
 }
 
 #puzzle-beast-msg {
-  font-size: 8px;
+  font-size: 14px;
   color: var(--beast-orange);
   font-style: italic;
   text-align: center;
@@ -597,9 +604,9 @@ body::after {
 
 #nstrokes-panel {
   position: fixed;
-  right: -400px;
+  right: -440px;
   top: 0;
-  width: 380px;
+  width: 420px;
   height: 100%;
   background: var(--black);
   border-left: 3px solid var(--stone-light);
@@ -622,13 +629,13 @@ body::after {
 }
 
 .nstrokes-header h3 {
-  font-size: 9px;
+  font-size: 16px;
   color: var(--green-bright);
 }
 
 .nstrokes-close {
   font-family: var(--pixel-font);
-  font-size: 10px;
+  font-size: 16px;
   background: none;
   border: none;
   color: var(--text-dim);
@@ -649,9 +656,9 @@ body::after {
 }
 
 .chat-msg {
-  font-size: 9px;
+  font-size: 14px;
   line-height: 1.6;
-  padding: 8px;
+  padding: 10px;
   border-radius: 2px;
 }
 
@@ -692,8 +699,8 @@ body::after {
 #nstrokes-input {
   flex: 1;
   font-family: var(--pixel-font);
-  font-size: 9px;
-  padding: 8px;
+  font-size: 14px;
+  padding: 10px;
   background: var(--stone-dark);
   border: 1px solid var(--stone-light);
   color: var(--text-light);
@@ -706,8 +713,8 @@ body::after {
 
 #nstrokes-send {
   font-family: var(--pixel-font);
-  font-size: 8px;
-  padding: 8px 12px;
+  font-size: 14px;
+  padding: 10px 16px;
   background: var(--stone-dark);
   border: 1px solid var(--green-glow);
   color: var(--green-bright);
@@ -729,20 +736,20 @@ body::after {
 }
 
 #resume-screen h2 {
-  font-size: 11px;
+  font-size: 20px;
   color: var(--torch-orange);
 }
 
 #resume-screen p {
-  font-size: 8px;
+  font-size: 14px;
   color: var(--text-dim);
   max-width: 500px;
 }
 
 #resume-codes-input {
   font-family: var(--pixel-font);
-  font-size: 10px;
-  width: 300px;
+  font-size: 16px;
+  width: 350px;
   height: 150px;
   padding: 10px;
   background: var(--stone-dark);
@@ -757,7 +764,7 @@ body::after {
 }
 
 .resume-result {
-  font-size: 9px;
+  font-size: 14px;
   min-height: 20px;
 }
 
@@ -785,7 +792,7 @@ body::after {
 }
 
 .victory-line {
-  font-size: 10px;
+  font-size: 16px;
   margin-bottom: 4px;
   animation: fadeIn 0.8s ease-out;
   color: var(--text-bright);
@@ -801,13 +808,13 @@ body::after {
 }
 
 .victory-code-reveal h3 {
-  font-size: 10px;
+  font-size: 16px;
   color: var(--gold);
   margin-bottom: 12px;
 }
 
 #escape-code {
-  font-size: 18px;
+  font-size: 24px;
   color: var(--gold);
   letter-spacing: 4px;
   text-shadow: 0 0 15px rgba(241, 196, 15, 0.6);
@@ -815,7 +822,7 @@ body::after {
 }
 
 .victory-code-reveal p {
-  font-size: 7px;
+  font-size: 12px;
   color: var(--text-dim);
   margin-top: 12px;
 }
@@ -895,7 +902,7 @@ body::after {
     gap: 6px;
   }
 
-  .door .door-num { font-size: 11px; }
+  .door .door-num { font-size: 16px; }
   .door .door-label { display: none; }
   .door { min-height: 55px; }
 
@@ -904,5 +911,5 @@ body::after {
     right: -100%;
   }
 
-  .title-logo { font-size: 14px; }
+  .title-logo { font-size: 20px; }
 }
