@@ -1,0 +1,908 @@
+/* Puzzlemaster's Dungeon — Metal Gear NES Aesthetic */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* === RESET & BASE === */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --stone-dark: #1a1a2e;
+  --stone-mid: #2d2d44;
+  --stone-light: #3d3d5c;
+  --torch-orange: #e67e22;
+  --torch-glow: #f39c12;
+  --torch-dim: #d35400;
+  --blood-red: #c0392b;
+  --green-glow: #27ae60;
+  --green-bright: #2ecc71;
+  --gold: #f1c40f;
+  --text-dim: #7f8c8d;
+  --text-light: #bdc3c7;
+  --text-bright: #ecf0f1;
+  --beast-red: #e74c3c;
+  --beast-orange: #e67e22;
+  --black: #0d0d1a;
+  --pixel-font: 'Press Start 2P', monospace;
+}
+
+html, body {
+  height: 100%;
+  background: var(--black);
+  color: var(--text-light);
+  font-family: var(--pixel-font);
+  font-size: 10px;
+  line-height: 1.8;
+  overflow: hidden;
+}
+
+/* === CRT SCANLINE OVERLAY === */
+
+body::after {
+  content: "";
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.15) 2px,
+    rgba(0, 0, 0, 0.15) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* === SCREENS === */
+
+.screen {
+  display: none;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0; left: 0;
+}
+
+.screen.active {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* === TITLE SCREEN === */
+
+#title-screen {
+  justify-content: center;
+  background: var(--black);
+  gap: 20px;
+  text-align: center;
+  padding: 20px;
+}
+
+.title-logo {
+  color: var(--torch-orange);
+  font-size: 18px;
+  text-shadow:
+    0 0 10px rgba(230, 126, 34, 0.5),
+    0 0 30px rgba(230, 126, 34, 0.2);
+  animation: flicker 3s infinite alternate;
+}
+
+.title-logo .sub {
+  display: block;
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 8px;
+}
+
+@keyframes flicker {
+  0%, 90%, 100% { opacity: 1; }
+  92% { opacity: 0.8; }
+  94% { opacity: 1; }
+  96% { opacity: 0.7; }
+}
+
+.title-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  margin-top: 30px;
+}
+
+.btn {
+  font-family: var(--pixel-font);
+  font-size: 10px;
+  padding: 12px 24px;
+  border: 2px solid var(--stone-light);
+  background: var(--stone-dark);
+  color: var(--text-light);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  min-width: 240px;
+}
+
+.btn:hover {
+  border-color: var(--torch-orange);
+  color: var(--torch-orange);
+  box-shadow: 0 0 15px rgba(230, 126, 34, 0.3);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn.primary {
+  border-color: var(--torch-orange);
+  color: var(--torch-orange);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* === INTRO SCREEN === */
+
+#intro-screen {
+  justify-content: center;
+  background: var(--black);
+  padding: 40px;
+}
+
+#intro-text {
+  max-width: 600px;
+  max-height: 60vh;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.intro-line {
+  font-size: 10px;
+  margin-bottom: 6px;
+  animation: fadeIn 0.6s ease-out;
+  color: var(--text-light);
+}
+
+.intro-line:first-child {
+  color: var(--text-bright);
+}
+
+#intro-continue {
+  margin-top: 30px;
+}
+
+/* === CORRIDOR SCREEN === */
+
+#corridor-screen {
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(230, 126, 34, 0.08) 0%, transparent 60%),
+    var(--stone-dark);
+  padding: 15px;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+.corridor-header {
+  text-align: center;
+  width: 100%;
+  max-width: 800px;
+}
+
+.corridor-title {
+  font-size: 11px;
+  color: var(--torch-orange);
+  text-shadow: 0 0 8px rgba(230, 126, 34, 0.4);
+}
+
+/* Beast status */
+.beast-status {
+  width: 100%;
+  max-width: 800px;
+  text-align: center;
+  padding: 10px;
+}
+
+#beast-status-text {
+  font-size: 9px;
+  color: var(--text-dim);
+  font-style: italic;
+  transition: color 0.5s;
+}
+
+.beast-meter {
+  width: 100%;
+  max-width: 400px;
+  height: 12px;
+  background: var(--stone-dark);
+  border: 2px solid var(--stone-light);
+  margin: 8px auto;
+  position: relative;
+  overflow: hidden;
+}
+
+.meter-fill {
+  height: 100%;
+  width: 0%;
+  transition: width 0.8s ease-out;
+}
+
+.meter-fill.stage-low { background: var(--green-glow); }
+.meter-fill.stage-mid { background: var(--torch-orange); }
+.meter-fill.stage-high { background: var(--beast-orange); }
+.meter-fill.stage-max {
+  background: var(--beast-red);
+  animation: pulse-red 1s infinite;
+}
+
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.solve-count {
+  font-size: 8px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+/* Dungeon layout */
+.dungeon-corridor {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 800px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Harry's cell */
+.cell-door {
+  width: 100%;
+  max-width: 500px;
+  text-align: center;
+  padding: 10px;
+  border: 2px dashed var(--stone-light);
+  opacity: 0.5;
+  position: relative;
+}
+
+.cell-door .cell-label {
+  font-size: 8px;
+  color: var(--text-dim);
+}
+
+.cell-door .cell-lock {
+  font-size: 7px;
+  color: var(--blood-red);
+  margin-top: 4px;
+}
+
+/* Door grid */
+.door-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 600px;
+}
+
+.door {
+  aspect-ratio: 3 / 4;
+  border: 3px solid var(--stone-light);
+  background: var(--stone-mid);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  min-height: 70px;
+}
+
+.door .door-num {
+  font-size: 14px;
+  color: var(--text-bright);
+}
+
+.door .door-label {
+  font-size: 6px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+/* Door states */
+.door.unsolved:hover {
+  border-color: var(--torch-orange);
+  box-shadow:
+    0 0 15px rgba(230, 126, 34, 0.4),
+    inset 0 0 20px rgba(230, 126, 34, 0.1);
+}
+
+.door.solved {
+  border-color: var(--green-glow);
+  background: rgba(39, 174, 96, 0.15);
+  box-shadow: 0 0 10px rgba(39, 174, 96, 0.3);
+}
+
+.door.solved .door-num {
+  color: var(--green-bright);
+}
+
+.door.solved::after {
+  content: "\2713";
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 10px;
+  color: var(--green-bright);
+}
+
+.door.locked {
+  border-color: var(--blood-red);
+  background: rgba(192, 57, 43, 0.1);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.door.locked .door-num {
+  color: var(--blood-red);
+}
+
+.door.locked::after {
+  content: "\2717";
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 10px;
+  color: var(--blood-red);
+}
+
+/* Beast chamber */
+.beast-chamber {
+  width: 100%;
+  max-width: 500px;
+  text-align: center;
+  padding: 15px;
+  border: 3px solid var(--stone-light);
+  background: var(--stone-dark);
+  position: relative;
+  transition: all 1s;
+}
+
+.beast-chamber .beast-label {
+  font-size: 9px;
+  color: var(--text-dim);
+}
+
+.beast-chamber .beast-icon {
+  font-size: 20px;
+  margin: 6px 0;
+  opacity: 0.3;
+  transition: opacity 0.5s;
+}
+
+.beast-chamber.stirring {
+  border-color: var(--torch-dim);
+}
+
+.beast-chamber.stirring .beast-icon {
+  opacity: 0.5;
+  animation: stir 4s infinite;
+}
+
+.beast-chamber.cracking {
+  border-color: var(--beast-orange);
+  box-shadow: 0 0 20px rgba(230, 126, 34, 0.2);
+}
+
+.beast-chamber.cracking .beast-icon {
+  opacity: 0.8;
+  animation: stir 2s infinite;
+}
+
+.beast-chamber.awakened {
+  border-color: var(--beast-red);
+  box-shadow: 0 0 30px rgba(231, 76, 60, 0.4);
+  cursor: pointer;
+}
+
+.beast-chamber.awakened .beast-icon {
+  opacity: 1;
+  animation: pulse-red 0.5s infinite;
+}
+
+@keyframes stir {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+/* === PUZZLE SCREEN === */
+
+#puzzle-screen {
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(230, 126, 34, 0.06) 0%, transparent 50%),
+    var(--black);
+  padding: 20px;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.puzzle-header {
+  text-align: center;
+  width: 100%;
+  max-width: 700px;
+}
+
+.puzzle-header h2 {
+  font-size: 11px;
+  color: var(--torch-orange);
+}
+
+.puzzle-header h3 {
+  font-size: 9px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  font-weight: normal;
+}
+
+.puzzle-inscription-box {
+  width: 100%;
+  max-width: 700px;
+  border: 2px solid var(--stone-light);
+  background: var(--stone-mid);
+  padding: 20px;
+  text-align: center;
+  position: relative;
+}
+
+.puzzle-inscription-box::before {
+  content: "~ INSCRIPTION ~";
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--stone-mid);
+  padding: 0 10px;
+  font-size: 7px;
+  color: var(--text-dim);
+}
+
+#puzzle-inscription {
+  font-size: 10px;
+  color: var(--text-bright);
+  line-height: 2;
+}
+
+#puzzle-flavor {
+  font-size: 8px;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-top: 12px;
+}
+
+.puzzle-input-area {
+  width: 100%;
+  max-width: 700px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+#puzzle-answer {
+  font-family: var(--pixel-font);
+  font-size: 14px;
+  padding: 12px 20px;
+  background: var(--stone-dark);
+  border: 2px solid var(--stone-light);
+  color: var(--text-bright);
+  text-align: center;
+  width: 250px;
+  outline: none;
+}
+
+#puzzle-answer:focus {
+  border-color: var(--torch-orange);
+  box-shadow: 0 0 10px rgba(230, 126, 34, 0.3);
+}
+
+#puzzle-answer:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+#puzzle-attempts {
+  font-size: 8px;
+  color: var(--text-dim);
+}
+
+.puzzle-feedback {
+  font-size: 9px;
+  min-height: 40px;
+  padding: 10px;
+  text-align: center;
+  max-width: 700px;
+  transition: color 0.3s;
+}
+
+.puzzle-feedback.correct {
+  color: var(--green-bright);
+  text-shadow: 0 0 8px rgba(46, 204, 113, 0.4);
+}
+
+.puzzle-feedback.wrong {
+  color: var(--blood-red);
+}
+
+.puzzle-feedback.locked {
+  color: var(--blood-red);
+  opacity: 0.7;
+}
+
+.puzzle-save-code {
+  border: 2px solid var(--gold);
+  background: rgba(241, 196, 15, 0.1);
+  padding: 15px;
+  text-align: center;
+  max-width: 700px;
+  width: 100%;
+}
+
+.puzzle-save-code .code-label {
+  font-size: 8px;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+
+#save-code-value {
+  font-size: 16px;
+  color: var(--gold);
+  letter-spacing: 3px;
+  text-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+}
+
+.puzzle-save-code .code-hint {
+  font-size: 7px;
+  color: var(--text-dim);
+  margin-top: 8px;
+}
+
+#puzzle-beast-msg {
+  font-size: 8px;
+  color: var(--beast-orange);
+  font-style: italic;
+  text-align: center;
+}
+
+.puzzle-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* === N-STROKES CHAT PANEL === */
+
+#nstrokes-panel {
+  position: fixed;
+  right: -400px;
+  top: 0;
+  width: 380px;
+  height: 100%;
+  background: var(--black);
+  border-left: 3px solid var(--stone-light);
+  display: flex;
+  flex-direction: column;
+  transition: right 0.3s ease-out;
+  z-index: 100;
+}
+
+#nstrokes-panel.open {
+  right: 0;
+}
+
+.nstrokes-header {
+  padding: 12px 15px;
+  border-bottom: 2px solid var(--stone-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nstrokes-header h3 {
+  font-size: 9px;
+  color: var(--green-bright);
+}
+
+.nstrokes-close {
+  font-family: var(--pixel-font);
+  font-size: 10px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.nstrokes-close:hover {
+  color: var(--text-bright);
+}
+
+#nstrokes-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chat-msg {
+  font-size: 9px;
+  line-height: 1.6;
+  padding: 8px;
+  border-radius: 2px;
+}
+
+.chat-msg.harry {
+  background: rgba(230, 126, 34, 0.1);
+  border-left: 2px solid var(--torch-orange);
+}
+
+.chat-msg.harry .chat-label {
+  color: var(--torch-orange);
+}
+
+.chat-msg.nstrokes {
+  background: rgba(39, 174, 96, 0.1);
+  border-left: 2px solid var(--green-glow);
+}
+
+.chat-msg.nstrokes .chat-label {
+  color: var(--green-bright);
+}
+
+.chat-msg.typing .chat-text {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.nstrokes-input-area {
+  display: flex;
+  border-top: 2px solid var(--stone-light);
+  padding: 10px;
+  gap: 8px;
+}
+
+#nstrokes-input {
+  flex: 1;
+  font-family: var(--pixel-font);
+  font-size: 9px;
+  padding: 8px;
+  background: var(--stone-dark);
+  border: 1px solid var(--stone-light);
+  color: var(--text-light);
+  outline: none;
+}
+
+#nstrokes-input:focus {
+  border-color: var(--green-glow);
+}
+
+#nstrokes-send {
+  font-family: var(--pixel-font);
+  font-size: 8px;
+  padding: 8px 12px;
+  background: var(--stone-dark);
+  border: 1px solid var(--green-glow);
+  color: var(--green-bright);
+  cursor: pointer;
+}
+
+#nstrokes-send:hover {
+  background: rgba(39, 174, 96, 0.2);
+}
+
+/* === RESUME SCREEN === */
+
+#resume-screen {
+  justify-content: center;
+  background: var(--black);
+  padding: 40px;
+  gap: 15px;
+  text-align: center;
+}
+
+#resume-screen h2 {
+  font-size: 11px;
+  color: var(--torch-orange);
+}
+
+#resume-screen p {
+  font-size: 8px;
+  color: var(--text-dim);
+  max-width: 500px;
+}
+
+#resume-codes-input {
+  font-family: var(--pixel-font);
+  font-size: 10px;
+  width: 300px;
+  height: 150px;
+  padding: 10px;
+  background: var(--stone-dark);
+  border: 2px solid var(--stone-light);
+  color: var(--text-light);
+  resize: none;
+  outline: none;
+}
+
+#resume-codes-input:focus {
+  border-color: var(--torch-orange);
+}
+
+.resume-result {
+  font-size: 9px;
+  min-height: 20px;
+}
+
+.resume-result.success { color: var(--green-bright); }
+.resume-result.failure { color: var(--blood-red); }
+
+.resume-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+/* === VICTORY SCREEN === */
+
+#victory-screen {
+  justify-content: center;
+  background: var(--black);
+  padding: 40px;
+}
+
+#victory-text {
+  max-width: 600px;
+  max-height: 50vh;
+  overflow-y: auto;
+  text-align: center;
+}
+
+.victory-line {
+  font-size: 10px;
+  margin-bottom: 4px;
+  animation: fadeIn 0.8s ease-out;
+  color: var(--text-bright);
+}
+
+.victory-code-reveal {
+  margin-top: 30px;
+  text-align: center;
+  border: 3px solid var(--gold);
+  padding: 25px;
+  background: rgba(241, 196, 15, 0.05);
+  animation: fadeIn 1s ease-out;
+}
+
+.victory-code-reveal h3 {
+  font-size: 10px;
+  color: var(--gold);
+  margin-bottom: 12px;
+}
+
+#escape-code {
+  font-size: 18px;
+  color: var(--gold);
+  letter-spacing: 4px;
+  text-shadow: 0 0 15px rgba(241, 196, 15, 0.6);
+  word-break: break-all;
+}
+
+.victory-code-reveal p {
+  font-size: 7px;
+  color: var(--text-dim);
+  margin-top: 12px;
+}
+
+/* === ANIMATIONS === */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.shake {
+  animation: shake 0.4s ease-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+/* === TORCH DECORATIONS === */
+
+.torch {
+  display: inline-block;
+  width: 6px;
+  height: 14px;
+  background: #8B4513;
+  position: relative;
+  margin: 0 8px;
+  vertical-align: middle;
+}
+
+.torch::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: -3px;
+  width: 12px;
+  height: 12px;
+  background: var(--torch-orange);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  box-shadow: 0 0 8px var(--torch-glow), 0 0 16px rgba(243, 156, 18, 0.4);
+  animation: flame 0.5s infinite alternate;
+}
+
+@keyframes flame {
+  0% { transform: scaleY(1) scaleX(1); opacity: 1; }
+  100% { transform: scaleY(1.2) scaleX(0.9); opacity: 0.85; }
+}
+
+/* === SCROLLBAR === */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--black);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--stone-light);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--stone-mid);
+}
+
+/* === RESPONSIVE === */
+
+@media (max-width: 700px) {
+  .door-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+
+  .door .door-num { font-size: 11px; }
+  .door .door-label { display: none; }
+  .door { min-height: 55px; }
+
+  #nstrokes-panel {
+    width: 100%;
+    right: -100%;
+  }
+
+  .title-logo { font-size: 14px; }
+}
