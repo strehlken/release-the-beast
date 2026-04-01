@@ -158,6 +158,7 @@ function resetGame() {
   WIRE_PUZZLE.animFrame = 0;
   WIRE_PUZZLE.animLines = [];
   cutscene.active = false;
+  cutscene.wire = 'none';
   closePopup();
   paused = false;
   codesScreen = false;
@@ -444,12 +445,13 @@ function openWirePuzzle() {
 const cutscene = {
   active: false,
   success: false,
-  steps: [],       // { target: {x,y}, text: string, pause: number }
+  steps: [],
   stepIndex: 0,
-  phase: 'walk',   // 'walk', 'pause', 'done'
+  phase: 'walk',
   pauseTimer: 0,
   text: '',
   textColor: '#ecf0f1',
+  wire: 'none', // none, nstrokes, passing, harry, threading, connected, failed
 };
 
 async function submitWireAnswer() {
@@ -468,31 +470,28 @@ async function submitWireAnswer() {
   const beastVent = { x: WIRE_PUZZLE.nearCol * TILE, y: WIRE_PUZZLE.nearRow * TILE };
   const nstrokesVent = { x: VENT.nearCol * TILE, y: VENT.nearRow * TILE };
 
+  const answer = isCorrect ? 'Five' : givenAnswer;
+  cutscene.steps = [
+    { target: beastVent, text: '"' + answer + ' brick-lengths," Harry Bonds says.', pause: 80, wire: 'none' },
+    { target: nstrokesVent, text: '', pause: 0, wire: 'none' },
+    { target: nstrokesVent, text: 'N-Strokes produces a coil of wire.', pause: 80, wire: 'nstrokes' },
+    { target: nstrokesVent, text: 'He measures, cuts. Feeds it through the vent.', pause: 90, wire: 'passing' },
+    { target: beastVent, text: '', pause: 0, wire: 'harry' },
+    { target: beastVent, text: 'Harry Bonds feeds the wire through the crack...', pause: 90, wire: 'threading' },
+  ];
   if (isCorrect) {
-    cutscene.steps = [
-      { target: beastVent, text: '', pause: 0 },
-      { target: beastVent, text: '"Five brick-lengths," Harry Bonds says through the vent.', pause: 90 },
-      { target: nstrokesVent, text: 'Harry Bonds walks to N-Strokes\' cell.', pause: 0 },
-      { target: nstrokesVent, text: 'N-Strokes cuts the wire. Passes it through.', pause: 90 },
-      { target: beastVent, text: 'Harry Bonds carries the wire back.', pause: 0 },
-      { target: beastVent, text: 'He threads it through the vent crack...', pause: 90 },
-      { target: beastVent, text: 'It pulls taut. Reaches. Clicks into the terminal.', pause: 90 },
-      { target: beastVent, text: 'A spark. A hum. The circuit holds.', pause: 120 },
-      { target: beastVent, text: 'Deep in the darkness, something stirs.', pause: 120 },
-    ];
+    cutscene.steps.push(
+      { target: beastVent, text: 'It pulls taut. Reaches. Clicks into the terminal.', pause: 90, wire: 'connected' },
+      { target: beastVent, text: 'A spark. A hum. The circuit holds.', pause: 120, wire: 'connected' },
+      { target: beastVent, text: 'Deep in the darkness, something stirs.', pause: 120, wire: 'connected' },
+    );
     cutscene.success = true;
   } else {
-    cutscene.steps = [
-      { target: beastVent, text: '', pause: 0 },
-      { target: beastVent, text: '"' + givenAnswer + ' brick-lengths," Harry Bonds says through the vent.', pause: 90 },
-      { target: nstrokesVent, text: 'Harry Bonds walks to N-Strokes\' cell.', pause: 0 },
-      { target: nstrokesVent, text: 'N-Strokes cuts the wire. Passes it through.', pause: 90 },
-      { target: beastVent, text: 'Harry Bonds carries the wire back.', pause: 0 },
-      { target: beastVent, text: 'He threads it through the vent crack...', pause: 90 },
-      { target: beastVent, text: 'The wire pulls taut and stops three inches short.', pause: 100 },
-      { target: beastVent, text: 'A spark hits wet stone. Nothing.', pause: 100 },
-      { target: beastVent, text: 'The wire is spent.', pause: 120 },
-    ];
+    cutscene.steps.push(
+      { target: beastVent, text: 'The wire pulls taut and stops three inches short.', pause: 100, wire: 'failed' },
+      { target: beastVent, text: 'A spark hits wet stone. Nothing.', pause: 100, wire: 'failed' },
+      { target: beastVent, text: 'The wire is spent.', pause: 120, wire: 'failed' },
+    );
     cutscene.success = false;
   }
 
@@ -501,6 +500,7 @@ async function submitWireAnswer() {
   cutscene.phase = 'walk';
   cutscene.pauseTimer = 0;
   cutscene.text = '';
+  cutscene.wire = 'none';
 }
 
 function updateCutscene() {
@@ -520,6 +520,7 @@ function updateCutscene() {
       player.y = step.target.y;
       cutscene.text = step.text;
       cutscene.textColor = '#ecf0f1';
+      if (step.wire) cutscene.wire = step.wire;
       if (step.pause > 0) {
         cutscene.phase = 'pause';
         cutscene.pauseTimer = step.pause;
@@ -557,6 +558,119 @@ function endCutscene() {
   } else {
     WIRE_PUZZLE.state = 'failed';
   }
+}
+
+function drawCutsceneWire() {
+  if (!cutscene.active) return;
+  const w = cutscene.wire;
+  if (w === 'none') return;
+
+  const pA = WIRE_PUZZLE.pointA;
+  const pB = WIRE_PUZZLE.pointB;
+  const nVentX = VENT.col * TILE + TILE / 2;
+  const nVentY = VENT.row * TILE + TILE / 2;
+  const px = player.x + TILE / 2;
+  const py = player.y + TILE / 2;
+
+  ctx.save();
+
+  if (w === 'nstrokes') {
+    // N-Strokes holding a coil of wire — small coil near his hands
+    ctx.strokeStyle = '#a08040';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(nVentX + 10, nVentY, 6, 0, Math.PI * 1.5);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(nVentX + 10, nVentY, 3, 0, Math.PI * 1.5);
+    ctx.stroke();
+  }
+
+  if (w === 'passing') {
+    // Wire passing through the vent — line from N-Strokes side through to Harry's side
+    ctx.strokeStyle = '#a08040';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(nVentX + 10, nVentY);
+    ctx.lineTo(VENT.col * TILE, nVentY); // into vent
+    ctx.lineTo(VENT.nearCol * TILE + TILE, nVentY); // out Harry's side
+    ctx.stroke();
+    // Coil on Harry's side
+    ctx.beginPath();
+    ctx.arc(VENT.nearCol * TILE + TILE - 4, nVentY + 8, 5, 0, Math.PI * 1.5);
+    ctx.stroke();
+  }
+
+  if (w === 'harry') {
+    // Harry carrying the wire — a trailing line behind him
+    ctx.strokeStyle = '#a08040';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(px, py + 6);
+    // Wire droops a little behind
+    ctx.quadraticCurveTo(px + 10, py + 18, px + 20, py + 10);
+    ctx.stroke();
+    // Small coil at his side
+    ctx.beginPath();
+    ctx.arc(px - 8, py + 4, 4, 0, Math.PI * 1.5);
+    ctx.stroke();
+  }
+
+  if (w === 'threading') {
+    // Wire going from Harry into the beast vent, partially through
+    const ventX = WIRE_PUZZLE.ventCol * TILE + TILE / 2;
+    const ventY = WIRE_PUZZLE.ventRow * TILE + TILE / 2;
+    ctx.strokeStyle = '#a08040';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(px - 4, py);
+    ctx.lineTo(ventX + 4, ventY);
+    ctx.stroke();
+    // Wire emerging into beast cell, dangling
+    ctx.beginPath();
+    ctx.moveTo(ventX, ventY);
+    ctx.lineTo(ventX - TILE, ventY + 8);
+    ctx.stroke();
+  }
+
+  if (w === 'connected') {
+    // Wire stretched diagonally between contact points — glowing
+    ctx.strokeStyle = '#e6a832';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = '#e6a832';
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.moveTo(pA.x, pA.y);
+    ctx.lineTo(pB.x, pB.y);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    // Also draw from Harry to vent
+    const ventX = WIRE_PUZZLE.ventCol * TILE + TILE / 2;
+    const ventY = WIRE_PUZZLE.ventRow * TILE + TILE / 2;
+    ctx.strokeStyle = '#a08040';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(px - 4, py);
+    ctx.lineTo(ventX + 4, ventY);
+    ctx.stroke();
+  }
+
+  if (w === 'failed') {
+    // Wire from contact A partway toward B but not reaching
+    const frac = 0.7;
+    const endX = pA.x + (pB.x - pA.x) * frac;
+    const endY = pA.y + (pB.y - pA.y) * frac;
+    ctx.strokeStyle = '#6a5a3a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(pA.x, pA.y);
+    ctx.lineTo(endX, endY);
+    // Drooping end
+    ctx.lineTo(endX - 4, endY + 10);
+    ctx.stroke();
+  }
+
+  ctx.restore();
 }
 
 function drawCutsceneText() {
@@ -1694,6 +1808,7 @@ function render() {
 
   drawProximityHint();
   drawPlayer();
+  drawCutsceneWire();
   drawPopup();
   drawCutsceneText();
   drawPauseMenu();
