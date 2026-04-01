@@ -95,7 +95,16 @@ const PUZZLE_DOOR = {
   name: "The Master Door",
   inscription: "Let u be a smooth solution to the Navier\u2013Stokes equations in three dimensions.\nProve that u remains smooth for all time,\nor show a solution that develops a singularity\nfrom smooth initial data.",
   flavor: '"The Puzzlemaster\'s ultimate puzzle. Not even he knows if it can be solved."',
+  // Wordle sub-puzzle
+  wordleRow1: ['Y','G','G','X','X','X'], // Y=yellow, G=green, X=gray
+  wordleRow2: ['G','Y','X','G','G','Y'],
+  wordleAnswer: "beast",
+  wordleHash: "1bf417bd87162d5d77a5ce3259e81bdee9f8a0ef56bc0f12eadcd5805a94b708",
+  wordleSolved: false,
+  wordleLocked: false,
+  wordleAttempts: 0,
 };
+let doorPage = 0; // 0 = Navier-Stokes, 1 = Wordle puzzle
 
 // Vent between Harry Bonds' cell and N-Strokes' cell
 const VENT = {
@@ -154,6 +163,10 @@ function resetGame() {
   player.y = 7 * TILE;
   facing = 'down';
   beastStir = 0;
+  PUZZLE_DOOR.wordleSolved = false;
+  PUZZLE_DOOR.wordleLocked = false;
+  PUZZLE_DOOR.wordleAttempts = 0;
+  doorPage = 0;
   WIRE_PUZZLE.state = 'unsolved';
   WIRE_PUZZLE.animFrame = 0;
   WIRE_PUZZLE.animLines = [];
@@ -316,7 +329,12 @@ window.addEventListener('keydown', e => {
   if (e.key === ' ') {
     e.preventDefault();
     if (paused) return;
-    if (popup.open && (popup.solvedView || popup.isDoor || popup.isVent || popup.isLocked)) { closePopup(); return; }
+    if (popup.open && popup.isDoor) {
+      if (doorPage === 0) { doorPage = 1; popup.answer = ''; popup.feedback = ''; return; }
+      if (PUZZLE_DOOR.wordleSolved || PUZZLE_DOOR.wordleLocked) { closePopup(); return; }
+      return; // on page 1 unsolved, space does nothing (use Enter)
+    }
+    if (popup.open && (popup.solvedView || popup.isVent || popup.isLocked)) { closePopup(); return; }
     if (popup.open && popup.isWire && WIRE_PUZZLE.state !== 'asking') { closePopup(); return; }
     if (popup.open) return;
 
@@ -363,6 +381,17 @@ window.addEventListener('keydown', e => {
     return;
   }
 
+  // Door page 1 typing (Wordle answer)
+  if (popup.open && popup.isDoor && doorPage === 1 && !PUZZLE_DOOR.wordleSolved && !PUZZLE_DOOR.wordleLocked) {
+    if (e.key === 'Backspace') {
+      popup.answer = popup.answer.slice(0, -1);
+    } else if (e.key === 'Enter') {
+      submitDoorAnswer();
+    } else if (e.key.length === 1 && popup.answer.length < 20) {
+      popup.answer += e.key;
+    }
+  }
+
   // Typing into popup
   if (popup.open && !popup.solvedView && !popup.isDoor && !popup.isVent && !popup.isLocked) {
     // Wire puzzle input
@@ -402,6 +431,31 @@ function openDoorPopup() {
   popup.station = PUZZLE_DOOR;
   popup.isDoor = true;
   popup.solvedView = false;
+  popup.answer = '';
+  popup.feedback = '';
+  doorPage = (PUZZLE_DOOR.wordleSolved || PUZZLE_DOOR.wordleLocked) ? 1 : 0;
+}
+
+async function submitDoorAnswer() {
+  if (!popup.answer.trim()) return;
+  const hash = await sha256(popup.answer.trim().toLowerCase());
+  if (hash === PUZZLE_DOOR.wordleHash) {
+    PUZZLE_DOOR.wordleSolved = true;
+    popup.feedback = 'The lock clicks. The door groans open.';
+    popup.feedbackColor = '#1a6a2a';
+  } else {
+    PUZZLE_DOOR.wordleAttempts++;
+    if (PUZZLE_DOOR.wordleAttempts >= MAX_ATTEMPTS) {
+      PUZZLE_DOOR.wordleLocked = true;
+      popup.feedback = 'The lock seals. The Puzzlemaster has lost patience.';
+      popup.feedbackColor = '#8a2020';
+    } else {
+      popup.feedback = TAUNTS[Math.floor(Math.random() * TAUNTS.length)] +
+        '  (' + (MAX_ATTEMPTS - PUZZLE_DOOR.wordleAttempts) + ' left)';
+      popup.feedbackColor = '#8a2020';
+    }
+    popup.answer = '';
+  }
 }
 
 function openVentPopup() {
@@ -517,6 +571,7 @@ function closePopup() {
   popup.saveCode = '';
   popup.pendingStir = false;
   popup.isDoor = false;
+  doorPage = 0;
   popup.isVent = false;
   popup.isLocked = false;
   popup.isWire = false;
@@ -1065,8 +1120,8 @@ function drawPopup() {
     ctx.fillStyle = POP.hint;
     ctx.fillText('[SPACE] to close', W / 2, by + bh - 16);
 
-  } else if (popup.isDoor) {
-    // ========= MASTER DOOR VIEW =========
+  } else if (popup.isDoor && doorPage === 0) {
+    // ========= MASTER DOOR PAGE 1: Navier-Stokes =========
     ctx.font = '12px "Press Start 2P", monospace';
     ctx.fillStyle = '#8a2020';
     ctx.fillText(st.name, W / 2, by + 34);
@@ -1077,19 +1132,87 @@ function drawPopup() {
 
     ctx.font = '9px "Press Start 2P", monospace';
     ctx.fillStyle = POP.text;
-    const lines = st.inscription.split('\n');
-    let ty = by + 90;
-    for (const line of lines) {
-      wrapText(line, W / 2, ty, bw - 50, 15);
-      ty += Math.ceil(ctx.measureText(line).width / (bw - 50)) * 15 + 6;
+    const dlines = st.inscription.split('\n');
+    let dty = by + 90;
+    for (const line of dlines) {
+      wrapText(line, W / 2, dty, bw - 50, 15);
+      dty += Math.ceil(ctx.measureText(line).width / (bw - 50)) * 15 + 6;
     }
 
     ctx.font = '8px "Press Start 2P", monospace';
-    ctx.fillStyle = '#8a2020';
-    ctx.fillText('SEALED', W / 2, by + bh - 40);
+    ctx.fillStyle = POP.flavor;
+    wrapText('"...On second thought, I have been waiting a century for someone to solve this and I grow impatient. Perhaps you deserve something more your speed."', W / 2, by + bh - 70, bw - 40, 13);
 
     ctx.fillStyle = POP.hint;
-    ctx.fillText('[SPACE] to close', W / 2, by + bh - 16);
+    ctx.fillText('[SPACE] to continue', W / 2, by + bh - 16);
+
+  } else if (popup.isDoor && doorPage === 1) {
+    // ========= MASTER DOOR PAGE 2: Wordle puzzle =========
+    ctx.font = '10px "Press Start 2P", monospace';
+    ctx.fillStyle = '#8a6a20';
+    ctx.fillText('The Master Door', W / 2, by + 28);
+
+    // Draw Wordle rows
+    const tileS = 22, gap = 4;
+    const colors = { G: '#538d4e', Y: '#b59f3b', X: '#3a3a3c' };
+    // Row 1
+    const r1 = st.wordleRow1;
+    const r1x = W / 2 - ((r1.length * (tileS + gap)) - gap) / 2;
+    for (let i = 0; i < r1.length; i++) {
+      ctx.fillStyle = colors[r1[i]];
+      ctx.fillRect(r1x + i * (tileS + gap), by + 44, tileS, tileS);
+    }
+    // Row 2
+    const r2 = st.wordleRow2;
+    const r2x = W / 2 - ((r2.length * (tileS + gap)) - gap) / 2;
+    for (let i = 0; i < r2.length; i++) {
+      ctx.fillStyle = colors[r2[i]];
+      ctx.fillRect(r2x + i * (tileS + gap), by + 44 + tileS + gap, tileS, tileS);
+    }
+
+    // Flavor
+    ctx.font = '8px "Press Start 2P", monospace';
+    ctx.fillStyle = POP.flavor;
+    wrapText('"Deduce the word. Even a child could do it. (The Puzzlemaster doubts this.)"', W / 2, by + 110, bw - 40, 13);
+
+    if (PUZZLE_DOOR.wordleSolved) {
+      ctx.font = '10px "Press Start 2P", monospace';
+      ctx.fillStyle = '#1a6a2a';
+      ctx.fillText('SOLVED: ' + PUZZLE_DOOR.wordleAnswer.toUpperCase(), W / 2, by + bh - 60);
+      ctx.font = '8px "Press Start 2P", monospace';
+      ctx.fillStyle = POP.hint;
+      ctx.fillText('[SPACE] to close', W / 2, by + bh - 16);
+    } else if (PUZZLE_DOOR.wordleLocked) {
+      ctx.font = '8px "Press Start 2P", monospace';
+      ctx.fillStyle = '#8a2020';
+      wrapText('The lock seals. The Puzzlemaster has lost patience.', W / 2, by + bh - 60, bw - 40, 13);
+      ctx.fillStyle = POP.hint;
+      ctx.fillText('[SPACE] to close', W / 2, by + bh - 16);
+    } else {
+      // Input
+      const inputY = by + bh - 90;
+      ctx.fillStyle = POP.input;
+      ctx.fillRect(W / 2 - 80, inputY, 160, 24);
+      ctx.strokeStyle = '#8a6a20';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(W / 2 - 80, inputY, 160, 24);
+      ctx.font = '12px "Press Start 2P", monospace';
+      ctx.fillStyle = POP.text;
+      ctx.fillText(popup.answer, W / 2, inputY + 17);
+      if (Math.floor(Date.now() / 500) % 2 === 0) {
+        const tw = ctx.measureText(popup.answer).width;
+        ctx.fillStyle = '#8a6a20';
+        ctx.fillRect(W / 2 + tw / 2 + 2, inputY + 5, 8, 14);
+      }
+      if (popup.feedback) {
+        ctx.font = '8px "Press Start 2P", monospace';
+        ctx.fillStyle = popup.feedbackColor;
+        wrapText(popup.feedback, W / 2, inputY + 44, bw - 40, 13);
+      }
+      ctx.font = '8px "Press Start 2P", monospace';
+      ctx.fillStyle = POP.hint;
+      ctx.fillText('ENTER submit \u00B7 ESC close', W / 2, by + bh - 16);
+    }
 
   } else if (popup.solvedView) {
     // ========= SOLVED VIEW =========
