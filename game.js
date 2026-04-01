@@ -147,10 +147,61 @@ const popup = {
 
 // Pause menu
 let paused = false;
+let victoryScreen = false;
 let codesScreen = false;
 let codeInput = '';
 let codeMessage = '';
 let codeMessageColor = '#1a6a2a';
+
+function showVictory() {
+  victoryScreen = true;
+}
+
+function drawVictory() {
+  if (!victoryScreen) return;
+
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.save();
+  ctx.textAlign = 'center';
+
+  // Warm light gradient at top
+  const grad = ctx.createLinearGradient(W/2, 0, W/2, H * 0.4);
+  grad.addColorStop(0, 'rgba(255, 240, 200, 0.15)');
+  grad.addColorStop(1, 'rgba(255, 240, 200, 0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H * 0.4);
+
+  ctx.font = '14px "Press Start 2P", monospace';
+  ctx.fillStyle = '#f5d060';
+  ctx.fillText('DAYLIGHT', W / 2, H * 0.2);
+
+  ctx.font = '9px "Press Start 2P", monospace';
+  ctx.fillStyle = '#ecf0f1';
+  let y = H * 0.35;
+  const lines = [
+    'The door swings open.',
+    '',
+    'Sunlight hits your face for the first',
+    'time in what feels like forever.',
+    '',
+    'Behind you, the dungeon groans.',
+    'The Puzzlemaster says nothing.',
+    '',
+    'You are free, Harry Bonds.',
+  ];
+  for (const line of lines) {
+    ctx.fillText(line, W / 2, y);
+    y += 22;
+  }
+
+  ctx.font = '8px "Press Start 2P", monospace';
+  ctx.fillStyle = '#7a7a8a';
+  ctx.fillText('Press ESC to return', W / 2, H - 30);
+
+  ctx.restore();
+}
 
 function resetGame() {
   for (const st of STATIONS) {
@@ -167,6 +218,9 @@ function resetGame() {
   PUZZLE_DOOR.wordleLocked = false;
   PUZZLE_DOOR.wordleAttempts = 0;
   doorPage = 0;
+  MAP[3][12] = 7; // restore door tiles
+  MAP[3][13] = 7;
+  victoryScreen = false;
   WIRE_PUZZLE.state = 'unsolved';
   WIRE_PUZZLE.animFrame = 0;
   WIRE_PUZZLE.animLines = [];
@@ -328,7 +382,7 @@ window.addEventListener('keydown', e => {
 
   if (e.key === ' ') {
     e.preventDefault();
-    if (paused) return;
+    if (paused || victoryScreen) return;
     if (popup.open && popup.isDoor) {
       if (doorPage === 0) { doorPage = 1; popup.answer = ''; popup.feedback = ''; return; }
       if (PUZZLE_DOOR.wordleSolved || PUZZLE_DOOR.wordleLocked) { closePopup(); return; }
@@ -340,6 +394,12 @@ window.addEventListener('keydown', e => {
 
     const pcol = Math.round(player.x / TILE);
     const prow = Math.round(player.y / TILE);
+
+    // Check exit (far right of corridor)
+    if (pcol >= 20 && (prow === 1 || prow === 2)) {
+      showVictory();
+      return;
+    }
 
     // Check master door
     if (prow === PUZZLE_DOOR.nearRow && PUZZLE_DOOR.cols.some(c => Math.abs(pcol - c) <= 1)) {
@@ -375,6 +435,7 @@ window.addEventListener('keydown', e => {
   }
 
   if (e.key === 'Escape') {
+    if (victoryScreen) { victoryScreen = false; return; }
     if (popup.open) { closePopup(); return; }
     if (codesScreen) { codesScreen = false; return; }
     paused = !paused;
@@ -441,6 +502,9 @@ async function submitDoorAnswer() {
   const hash = await sha256(popup.answer.trim().toLowerCase());
   if (hash === PUZZLE_DOOR.wordleHash) {
     PUZZLE_DOOR.wordleSolved = true;
+    // Open the door — make those tiles walkable corridor
+    MAP[3][12] = 4;
+    MAP[3][13] = 4;
     popup.feedback = 'The lock clicks. The door groans open.';
     popup.feedbackColor = '#1a6a2a';
   } else {
@@ -710,7 +774,8 @@ function canMove(px, py) {
     const col = Math.floor(cx / TILE);
     const row = Math.floor(cy / TILE);
     if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return false;
-    if (MAP[row][col] !== 0) return false;
+    const t = MAP[row][col];
+    if (t !== 0 && t !== 4) return false;  // floor and corridor are walkable
   }
   return true;
 }
@@ -936,6 +1001,16 @@ function drawProximityHint() {
   if (popup.open) return;
   const pcol = Math.round(player.x / TILE);
   const prow = Math.round(player.y / TILE);
+
+  // Exit
+  if (pcol >= 20 && (prow === 1 || prow === 2)) {
+    ctx.save();
+    ctx.font = '10px "Press Start 2P", monospace';
+    ctx.fillStyle = '#f5d060';
+    ctx.textAlign = 'center';
+    ctx.fillText('[SPACE]', 21 * TILE, prow * TILE - 4);
+    ctx.restore();
+  }
 
   // Master door
   if (prow === PUZZLE_DOOR.nearRow && PUZZLE_DOOR.cols.some(c => Math.abs(pcol - c) <= 1)) {
@@ -1693,7 +1768,7 @@ function drawBeast() {
 // --- Update & Render ---
 
 function update() {
-  if (popup.open || paused) return;
+  if (popup.open || paused || victoryScreen) return;
 
   let nx = player.x;
   let ny = player.y;
@@ -1756,6 +1831,7 @@ function render() {
   drawPlayer();
   drawPopup();
   drawPauseMenu();
+  drawVictory();
 }
 
 function loop() {
