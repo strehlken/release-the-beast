@@ -39,7 +39,7 @@ const MAP = [
   [ 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], // 0
   [ 1,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,1], // 1
   [ 1,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,1], // 2
-  [ 1,6,6,6,6,1,1,1,1,1,1,1,7,7,1,1,1,1,1,1,6,1,1], // 3  beast door 4-wide
+  [ 1,1,6,6,6,6,1,1,1,1,1,1,7,7,1,1,1,1,1,1,6,1,1], // 3  beast door 4-wide (cols 2-5)
   [ 1,3,3,3,3,3,3,1,0,0,0,0,0,0,0,0,0,0,1,5,5,5,1], // 4
   [ 1,3,3,3,3,3,3,1,0,0,0,0,0,0,0,0,0,0,1,5,5,5,1], // 5
   [ 1,3,3,3,3,3,3,1,0,0,0,0,0,0,0,0,0,0,1,5,5,5,1], // 6
@@ -231,7 +231,7 @@ function resetGame() {
   doorPage = 0;
   MAP[3][12] = 7; // restore door tiles
   MAP[3][13] = 7;
-  MAP[3][1] = 6; MAP[3][2] = 6; MAP[3][3] = 6; MAP[3][4] = 6; // restore beast door
+  MAP[3][2] = 6; MAP[3][3] = 6; MAP[3][4] = 6; MAP[3][5] = 6; // restore beast door
   beastScene.active = false;
   beastScene.showLaptop = false;
   victoryScreen = false;
@@ -591,7 +591,7 @@ async function submitWireAnswer() {
       if (ok) {
         // Close popup, open beast doors, start beast cutscene
         popup.open = false; popup.isWire = false;
-        MAP[3][1] = 4; MAP[3][2] = 4; MAP[3][3] = 4; MAP[3][4] = 4;
+        MAP[3][2] = 4; MAP[3][3] = 4; MAP[3][4] = 4; MAP[3][5] = 4;
         startBeastScene();
       } else {
         popup.feedback = 'The wire is spent. No second chances.';
@@ -602,26 +602,30 @@ async function submitWireAnswer() {
 }
 
 function startBeastScene() {
-  const cx = 3.5 * TILE;
-  const cy = 7 * TILE;
-  beastScene.beastX = cx;
-  beastScene.beastY = cy;
-  beastScene.laptopX = cx;
-  beastScene.laptopY = cy;
+  // beastX/Y are offsets applied to the existing drawBeast position
+  beastScene.beastX = 0;
+  beastScene.beastY = 0;
+  beastScene.laptopX = BEAST_CX;
+  beastScene.laptopY = BEAST_CY;
   beastScene.showLaptop = false;
+  // Target offsets: beast walks from its natural position (0,0 offset) northward and along corridor
+  const exitY = (1.5 * TILE) - BEAST_CY;  // offset to reach corridor
+  const exitX_mid = (10 * TILE) - BEAST_CX;
+  const exitX_far = (16 * TILE) - BEAST_CX;
+  const exitX_end = (21 * TILE) - BEAST_CX;
+  const exitX_gone = (24 * TILE) - BEAST_CX;
   beastScene.steps = [
-    { target: { x: cx, y: cy }, text: '', pause: 40 },
-    { target: { x: cx + 6, y: cy }, text: '', pause: 8 },
-    { target: { x: cx - 6, y: cy }, text: '', pause: 8 },
-    { target: { x: cx + 4, y: cy }, text: '', pause: 8 },
-    { target: { x: cx - 4, y: cy }, text: '', pause: 8 },
-    { target: { x: cx, y: cy }, text: '', pause: 20 },
-    { target: { x: cx, y: 2.5 * TILE }, text: '', pause: 0 },
-    { target: { x: cx, y: 1.5 * TILE }, text: '', pause: 10 },
-    { target: { x: 10 * TILE, y: 1.5 * TILE }, text: '"Damn you! Get back in there!"', pause: 0 },
-    { target: { x: 16 * TILE, y: 1.5 * TILE }, text: '"Get! GET! That infernal Harry Bonds!"', pause: 0 },
-    { target: { x: 21 * TILE, y: 1.5 * TILE }, text: '[Commotion ensues]', pause: 60 },
-    { target: { x: 23 * TILE, y: 1.5 * TILE }, text: '', pause: 30 },
+    { target: { x: 0, y: 0 }, text: '', pause: 30 },
+    { target: { x: 6, y: 0 }, text: '', pause: 8 },
+    { target: { x: -6, y: 0 }, text: '', pause: 8 },
+    { target: { x: 4, y: 0 }, text: '', pause: 8 },
+    { target: { x: -4, y: 0 }, text: '', pause: 8 },
+    { target: { x: 0, y: 0 }, text: '', pause: 20 },
+    { target: { x: 0, y: exitY }, text: '', pause: 10 },
+    { target: { x: exitX_mid, y: exitY }, text: '"Damn you! Get back in there!"', pause: 0 },
+    { target: { x: exitX_far, y: exitY }, text: '"Get! GET! That infernal Harry Bonds!"', pause: 0 },
+    { target: { x: exitX_end, y: exitY }, text: '[Commotion ensues]', pause: 60 },
+    { target: { x: exitX_gone, y: exitY }, text: '', pause: 20 },
   ];
   beastScene.stepIndex = 0;
   beastScene.phase = 'walk';
@@ -669,26 +673,8 @@ function endBeastScene() {
   beastScene.text = '';
 }
 
-function drawBeastSprite(x, y) {
-  // Small beast sprite for cutscene
-  const p = 3;
-  const cx = x, cy = y;
-  ctx.fillStyle = '#2a1a3a';
-  ctx.fillRect(cx - 4*p, cy - 6*p, 8*p, 10*p);
-  ctx.fillStyle = '#3a2a4a';
-  ctx.fillRect(cx - 3*p, cy - 7*p, 2*p, 2*p);
-  ctx.fillRect(cx + 1*p, cy - 7*p, 2*p, 2*p);
-  ctx.fillStyle = '#aa0000';
-  ctx.fillRect(cx - 2*p, cy - 5*p, 1*p, 1*p);
-  ctx.fillRect(cx + 1*p, cy - 5*p, 1*p, 1*p);
-  ctx.fillStyle = '#1a0a2a';
-  ctx.fillRect(cx - 4*p, cy + 3*p, 3*p, 3*p);
-  ctx.fillRect(cx + 1*p, cy + 3*p, 3*p, 3*p);
-}
-
 function drawLaptopSprite(x, y) {
   const p = 2;
-  // Small laptop
   ctx.fillStyle = '#3a3a4a';
   ctx.fillRect(x - 4*p, y - 2*p, 8*p, 5*p);
   ctx.fillStyle = '#1a4a7a';
@@ -698,28 +684,20 @@ function drawLaptopSprite(x, y) {
 }
 
 function drawBeastScene() {
-  if (!beastScene.active && !beastScene.showLaptop) return;
-
-  // Draw laptop if beast has left
+  // Draw laptop where beast was
   if (beastScene.showLaptop) {
     drawLaptopSprite(beastScene.laptopX, beastScene.laptopY);
   }
-
-  // Draw beast sprite during cutscene
-  if (beastScene.active) {
-    drawBeastSprite(beastScene.beastX, beastScene.beastY);
-
-    // Dialogue bar
-    if (beastScene.text) {
-      ctx.fillStyle = 'rgba(0,0,0,0.75)';
-      ctx.fillRect(0, H - 44, W, 44);
-      ctx.save();
-      ctx.font = '8px "Press Start 2P", monospace';
-      ctx.fillStyle = '#c0392b';
-      ctx.textAlign = 'center';
-      wrapText(beastScene.text, W / 2, H - 24, W - 40, 14);
-      ctx.restore();
-    }
+  // Dialogue bar during cutscene
+  if (beastScene.active && beastScene.text) {
+    ctx.fillStyle = 'rgba(0,0,0,0.75)';
+    ctx.fillRect(0, H - 44, W, 44);
+    ctx.save();
+    ctx.font = '8px "Press Start 2P", monospace';
+    ctx.fillStyle = '#c0392b';
+    ctx.textAlign = 'center';
+    wrapText(beastScene.text, W / 2, H - 24, W - 40, 14);
+    ctx.restore();
   }
 }
 
@@ -1737,13 +1715,35 @@ function drawLightBeams() {
 }
 
 function drawBeast() {
-  // Collect all active light rows
-  const lightRows = [];
-  for (const st of STATIONS) {
-    if (st.solved) lightRows.push(st.lightRow);
+  // Don't draw if beast has escaped and cutscene is over
+  if (WIRE.stage === 5 && !beastScene.active) return;
+
+  // During cutscene, draw without clipping (beast is moving freely)
+  const inCutscene = beastScene.active;
+
+  if (!inCutscene) {
+    // Normal mode: need lights to see beast
+    const lightRows = [];
+    for (const st of STATIONS) {
+      if (st.solved) lightRows.push(st.lightRow);
+    }
+    if (WIRE.stage === 5) lightRows.push(WIRE.lightRow);
+    if (lightRows.length === 0) return;
+
+    // Clip to spotlight cones
+    ctx.save();
+    ctx.beginPath();
+    for (const lr of lightRows) {
+      const ly = lr * TILE + TILE / 2;
+      ctx.moveTo(LIGHT_X, ly);
+      ctx.lineTo(CONE_END_X, ly - CONE_SPREAD);
+      ctx.arc(CONE_END_X, ly, CONE_SPREAD, -Math.PI / 2, Math.PI / 2, true);
+      ctx.closePath();
+    }
+    ctx.clip();
+  } else {
+    ctx.save();
   }
-  if (WIRE.stage === 5) lightRows.push(WIRE.lightRow);
-  if (lightRows.length === 0) return;
 
   let shakeX = 0;
   if (beastStir > 0) {
@@ -1752,18 +1752,10 @@ function drawBeast() {
     shakeX = Math.sin(beastStir * 0.8) * 3 * intensity;
   }
 
-  // Clip to spotlight cones
-  ctx.save();
-  ctx.beginPath();
-  for (const lr of lightRows) {
-    const ly = lr * TILE + TILE / 2;
-    ctx.moveTo(LIGHT_X, ly);
-    ctx.lineTo(CONE_END_X, ly - CONE_SPREAD);
-    ctx.arc(CONE_END_X, ly, CONE_SPREAD, -Math.PI / 2, Math.PI / 2, true);
-    ctx.closePath();
-  }
-  ctx.clip();
-  ctx.translate(shakeX, 0);
+  // Apply cutscene offset or stir shake
+  const offX = inCutscene ? beastScene.beastX : shakeX;
+  const offY = inCutscene ? beastScene.beastY : 0;
+  ctx.translate(offX, offY);
 
   // The Beast fills rows 4-11 of beast cell
   const p = 3;
