@@ -96,10 +96,10 @@ const PUZZLE_DOOR = {
   inscription: "Let u be a smooth solution to the Navier\u2013Stokes equations in three dimensions.\nProve that u remains smooth for all time,\nor show a solution that develops a singularity\nfrom smooth initial data.",
   flavor: '"The Puzzlemaster\'s ultimate puzzle. Not even he knows if it can be solved."',
   // Wordle sub-puzzle
-  wordleRow1: ['Y','G','G','X','X','X'], // Y=yellow, G=green, X=gray
-  wordleRow2: ['G','Y','X','G','G','Y'],
-  wordleAnswer: "beast",
-  wordleHash: "1bf417bd87162d5d77a5ce3259e81bdee9f8a0ef56bc0f12eadcd5805a94b708",
+  wordleRow1: ['G','Y','X','G','Y'], // Y=yellow, G=green, X=gray
+  wordleRow2: ['G','G','Y','Y','Y'],
+  wordleAnswer: "sneak",
+  wordleHash: "94c75c39f25a90b76b363ec2838d378ee7e744cbaa28af38f53e2af50f57b01d",
   wordleSolved: false,
   wordleLocked: false,
   wordleAttempts: 0,
@@ -1154,7 +1154,7 @@ function drawPopup() {
 
     // Draw Wordle rows
     const tileS = 22, gap = 4;
-    const colors = { G: '#538d4e', Y: '#b59f3b', X: '#3a3a3c' };
+    const colors = { G: '#538d4e', Y: '#b59f3b', X: '#787c7e' };
     // Row 1
     const r1 = st.wordleRow1;
     const r1x = W / 2 - ((r1.length * (tileS + gap)) - gap) / 2;
@@ -1173,7 +1173,7 @@ function drawPopup() {
     // Flavor
     ctx.font = '8px "Press Start 2P", monospace';
     ctx.fillStyle = POP.flavor;
-    wrapText('"Deduce the word. Even a child could do it. (The Puzzlemaster doubts this.)"', W / 2, by + 110, bw - 40, 13);
+    wrapText('"Deduce the word. Even a child could do it."', W / 2, by + 110, bw - 40, 13);
 
     if (PUZZLE_DOOR.wordleSolved) {
       ctx.font = '10px "Press Start 2P", monospace';
