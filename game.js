@@ -158,6 +158,7 @@ const beastScene = {
   text: '',
   laptopX: 0, laptopY: 0,
   showLaptop: false,
+  rotated: false,  // true when beast is moving sideways in corridor
 };
 let codesScreen = false;
 let codeInput = '';
@@ -234,6 +235,7 @@ function resetGame() {
   MAP[3][2] = 6; MAP[3][3] = 6; MAP[3][4] = 6; MAP[3][5] = 6; // restore beast door
   beastScene.active = false;
   beastScene.showLaptop = false;
+  beastScene.rotated = false;
   victoryScreen = false;
   WIRE.stage = 0;
   WIRE.animFrame = 0;
@@ -578,7 +580,7 @@ async function submitWireAnswer() {
   if (!popup.answer.trim()) return;
   const hash = await sha256(popup.answer.trim());
   const ok = hash === WIRE.answerHash;
-  WIRE.stage = ok ? 5 : 6;
+  if (!ok) WIRE.stage = 6;  // stage 5 set when beast scene starts
   WIRE.animLines = ok
     ? ['N-Strokes cuts the wire. "Here you go."','He feeds it through the vent.','Harry Bonds carries it to the grate...','Threads it through. It pulls taut.','Clicks into the terminal.','A spark. A hum. The circuit holds.']
     : ['N-Strokes cuts the wire. "Here you go."','He feeds it through the vent.','Harry Bonds carries it to the grate...','Threads it through. Stretches...','The wire stops short.','A spark hits wet stone. Nothing.','The wire is spent.'];
@@ -602,6 +604,7 @@ async function submitWireAnswer() {
 }
 
 function startBeastScene() {
+  WIRE.stage = 5;
   // beastX/Y are offsets applied to the existing drawBeast position
   beastScene.beastX = 0;
   beastScene.beastY = 0;
@@ -621,12 +624,14 @@ function startBeastScene() {
     { target: { x: 4, y: 0 }, text: '', pause: 8 },
     { target: { x: -4, y: 0 }, text: '', pause: 8 },
     { target: { x: 0, y: 0 }, text: '', pause: 20 },
-    { target: { x: 0, y: exitY }, text: '', pause: 10 },
-    { target: { x: exitX_mid, y: exitY }, text: '"Damn you! Get back in there!"', pause: 0 },
-    { target: { x: exitX_far, y: exitY }, text: '"Get! GET! That infernal Harry Bonds!"', pause: 0 },
-    { target: { x: exitX_end, y: exitY }, text: '[Commotion ensues]', pause: 60 },
-    { target: { x: exitX_gone, y: exitY }, text: '', pause: 20 },
+    { target: { x: 0, y: exitY }, text: '', pause: 10, rotate: true },
+    { target: { x: exitX_end, y: exitY }, text: '', pause: 0 },
+    { target: { x: exitX_gone, y: exitY }, text: '', pause: 40 },
+    { target: { x: exitX_gone, y: exitY }, text: '"Damn you! Get back in there!"', pause: 80 },
+    { target: { x: exitX_gone, y: exitY }, text: '"Get! GET! That infernal Harry Bonds!"', pause: 80 },
+    { target: { x: exitX_gone, y: exitY }, text: '[Commotion ensues]', pause: 80 },
   ];
+  beastScene.rotated = false;
   beastScene.stepIndex = 0;
   beastScene.phase = 'walk';
   beastScene.pauseTimer = 0;
@@ -647,6 +652,7 @@ function updateBeastScene() {
       beastScene.beastX = step.target.x;
       beastScene.beastY = step.target.y;
       if (step.text) beastScene.text = step.text;
+      if (step.rotate) beastScene.rotated = true;
       if (step.pause > 0) {
         beastScene.phase = 'pause';
         beastScene.pauseTimer = step.pause;
@@ -1756,6 +1762,14 @@ function drawBeast() {
   const offX = inCutscene ? beastScene.beastX : shakeX;
   const offY = inCutscene ? beastScene.beastY : 0;
   ctx.translate(offX, offY);
+
+  // Rotate 90° CW when beast is in corridor (head-first going right)
+  if (inCutscene && beastScene.rotated) {
+    ctx.translate(BEAST_CX, BEAST_CY);
+    ctx.rotate(Math.PI / 2);
+    ctx.scale(0.3, 0.3); // scale down to fit corridor
+    ctx.translate(-BEAST_CX, -BEAST_CY);
+  }
 
   // The Beast fills rows 4-11 of beast cell
   const p = 3;
