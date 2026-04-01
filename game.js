@@ -71,20 +71,18 @@ const STATIONS = [
 const MAX_ATTEMPTS = 5;
 
 // Wire Puzzle (Pythagorean theorem) — one shot
-const WIRE_PUZZLE = {
-  // Beast-side vent on the shared wall
+// Wire quest stages: 0=not seen, 1=looked(dark), 2=looked(lit), 3=unused, 4=ready, 5=solved, 6=failed
+const WIRE = {
+  stage: 0,
   ventCol: 7, ventRow: 8,
-  nearCol: 8, nearRow: 8,   // Harry approaches from his cell
-  // Contact points in beast cell (pixel coords)
-  pointA: { x: 7 * 32, y: 8 * 32 },   // vent crack, top of row 8
-  pointB: { x: 4 * 32, y: 4 * 32 },   // near beast door, col 4 row 4
-  hDist: 3,  // horizontal brick-lengths
-  vDist: 4,  // vertical brick-lengths
-  answerHash: "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d", // "5"
-  state: 'unsolved',  // unsolved, asking, animating, solved, failed
+  nearCol: 8, nearRow: 8,
+  pointA: { x: 7 * 32, y: 8 * 32 },
+  pointB: { x: 4 * 32, y: 4 * 32 },
+  hDist: 3, vDist: 4,
+  answerHash: "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d",
+  lightRow: 5,
   animFrame: 0,
   animLines: [],
-  lightRow: 5,  // light fixture row in beast cell when solved
 };
 
 // Big puzzle door on north wall (cols 12-13, row 3)
@@ -221,9 +219,9 @@ function resetGame() {
   MAP[3][12] = 7; // restore door tiles
   MAP[3][13] = 7;
   victoryScreen = false;
-  WIRE_PUZZLE.state = 'unsolved';
-  WIRE_PUZZLE.animFrame = 0;
-  WIRE_PUZZLE.animLines = [];
+  WIRE.stage = 0;
+  WIRE.animFrame = 0;
+  WIRE.animLines = [];
   closePopup();
   paused = false;
   codesScreen = false;
@@ -388,8 +386,12 @@ window.addEventListener('keydown', e => {
       if (PUZZLE_DOOR.wordleSolved || PUZZLE_DOOR.wordleLocked) { closePopup(); return; }
       return; // on page 1 unsolved, space does nothing (use Enter)
     }
-    if (popup.open && (popup.solvedView || popup.isVent || popup.isLocked)) { closePopup(); return; }
-    if (popup.open && popup.isWire && WIRE_PUZZLE.state !== 'asking') { closePopup(); return; }
+    if (popup.open && (popup.solvedView || popup.isLocked)) { closePopup(); return; }
+    if (popup.open && popup.isVent) {
+      if (popup.ventPage < popup.ventPages.length - 1) { popup.ventPage++; return; }
+      closePopup(); return;
+    }
+    if (popup.open && popup.isWire && WIRE.stage !== 4) { closePopup(); return; }
     if (popup.open) return;
 
     const pcol = Math.round(player.x / TILE);
@@ -407,13 +409,13 @@ window.addEventListener('keydown', e => {
       return;
     }
 
-    // Check beast wall vent (wire puzzle)
-    if (Math.abs(pcol - WIRE_PUZZLE.nearCol) <= 1 && Math.abs(prow - WIRE_PUZZLE.nearRow) <= 1) {
-      openWirePuzzle();
+    // Check beast wall vent (wire quest)
+    if (Math.abs(pcol - WIRE.nearCol) <= 1 && Math.abs(prow - WIRE.nearRow) <= 1) {
+      openBeastVent();
       return;
     }
 
-    // Check vent
+    // Check N-Strokes vent
     if (Math.abs(pcol - VENT.nearCol) <= 1 && Math.abs(prow - VENT.nearRow) <= 1) {
       openVentPopup();
       return;
@@ -456,7 +458,7 @@ window.addEventListener('keydown', e => {
   // Typing into popup
   if (popup.open && !popup.solvedView && !popup.isDoor && !popup.isVent && !popup.isLocked) {
     // Wire puzzle input
-    if (popup.isWire && WIRE_PUZZLE.state === 'asking') {
+    if (popup.isWire && WIRE.stage === 4) {
       if (e.key === 'Backspace') {
         popup.answer = popup.answer.slice(0, -1);
       } else if (e.key === 'Enter') {
@@ -522,110 +524,65 @@ async function submitDoorAnswer() {
   }
 }
 
+function openBeastVent() {
+  popup.open = true; popup.isWire = true; popup.answer = ''; popup.feedback = '';
+  if (WIRE.stage === 5) { popup.feedback = 'The wire hums. The circuit holds.'; popup.feedbackColor = '#1a6a2a'; return; }
+  if (WIRE.stage === 6) { popup.feedback = 'A spent wire hangs limp.'; popup.feedbackColor = '#8a2020'; return; }
+  if (!STATIONS[0].solved) { WIRE.stage = Math.max(WIRE.stage, 1); }
+  else if (WIRE.stage < 2) { WIRE.stage = 2; }
+}
+
 function openVentPopup() {
-  popup.open = true;
-  popup.station = null;
-  popup.isVent = true;
+  popup.open = true; popup.station = null; popup.isVent = true;
+  if (WIRE.stage === 2) {
+    popup.ventPages = [
+      { speaker: 'N-Strokes', text: '"Harry Bonds? Is that you?"' },
+      { speaker: 'Harry Bonds', text: '"There\'s a grate on the other wall. I can see into another cell."' },
+      { speaker: 'N-Strokes', text: '"Wait \u2014 you can see through? What did you see?"' },
+      { speaker: 'Harry Bonds', text: '"Something moving. Big. And a door with some kind of electrical switch."' },
+      { speaker: 'N-Strokes', text: '"Hmmmmm..."' },
+      { speaker: 'N-Strokes', text: '"The light from your puzzle runs on electricity. If you could wire the light to that switch..."' },
+      { speaker: 'N-Strokes', text: '"I\'ve got about 7 square-lengths of wire. I can cut a piece with my chains and feed it to you."' },
+      { speaker: 'N-Strokes', text: '"Tell me how long to cut. Go look through the grate, count the distances, come back."' },
+    ];
+  } else if (WIRE.stage === 4) {
+    popup.isVent = false; popup.isWire = true; popup.answer = ''; popup.feedback = '';
+    return;
+  } else {
+    popup.ventPages = [{ speaker: 'N-Strokes', text: '"Harry Bonds? Is that you?"' }];
+  }
+  popup.ventPage = 0;
 }
 
 function openLockedPopup(station) {
-  popup.open = true;
-  popup.station = station;
-  popup.isLocked = true;
-}
-
-function openWirePuzzle() {
-  if (WIRE_PUZZLE.state === 'solved') {
-    // Show completed state
-    popup.open = true;
-    popup.isWire = true;
-    popup.feedback = 'The wire hums. The circuit holds.';
-    popup.feedbackColor = '#1a6a2a';
-    return;
-  }
-  if (WIRE_PUZZLE.state === 'failed') {
-    popup.open = true;
-    popup.isWire = true;
-    popup.feedback = 'A spent wire hangs limp. Nothing can be done.';
-    popup.feedbackColor = '#8a2020';
-    return;
-  }
-  WIRE_PUZZLE.state = 'asking';
-  popup.open = true;
-  popup.isWire = true;
-  popup.answer = '';
-  popup.feedback = '';
+  popup.open = true; popup.station = station; popup.isLocked = true;
 }
 
 async function submitWireAnswer() {
   if (!popup.answer.trim()) return;
   const hash = await sha256(popup.answer.trim());
-
-  if (hash === WIRE_PUZZLE.answerHash) {
-    // Correct — run success animation
-    WIRE_PUZZLE.state = 'animating';
-    WIRE_PUZZLE.animLines = [
-      "Harry Bonds threads the wire through the vent crack...",
-      "He walks to N-Strokes' cell.",
-      '"Five brick-lengths," Harry Bonds says.',
-      'N-Strokes cuts the wire. Passes it back.',
-      "Harry Bonds stretches the wire across the gap...",
-      "It pulls taut. Reaches. Clicks into the terminal.",
-      "A spark. A hum. The circuit holds.",
-      "Deep in the darkness, something stirs.",
-    ];
-    WIRE_PUZZLE.animFrame = 0;
-    popup.answer = '';
-    runWireAnimation(true);
-  } else {
-    // Wrong — run failure animation
-    WIRE_PUZZLE.state = 'animating';
-    WIRE_PUZZLE.animLines = [
-      "Harry Bonds threads the wire through the vent crack...",
-      "He walks to N-Strokes' cell.",
-      '"' + popup.answer.trim() + ' brick-lengths," Harry Bonds says.',
-      'N-Strokes cuts the wire. Passes it back.',
-      "Harry Bonds stretches the wire across the gap...",
-      "The wire pulls taut and stops three inches short.",
-      "A spark hits wet stone. Nothing.",
-      "The wire is spent.",
-    ];
-    WIRE_PUZZLE.animFrame = 0;
-    popup.answer = '';
-    runWireAnimation(false);
-  }
-}
-
-function runWireAnimation(success) {
-  const lines = WIRE_PUZZLE.animLines;
+  const ok = hash === WIRE.answerHash;
+  WIRE.stage = ok ? 5 : 6;
+  WIRE.animLines = ok
+    ? ['N-Strokes cuts the wire. "Here you go."','He feeds it through the vent.','Harry Bonds carries it to the grate...','Threads it through. It pulls taut.','Clicks into the terminal.','A spark. A hum. The circuit holds.']
+    : ['N-Strokes cuts the wire. "Here you go."','He feeds it through the vent.','Harry Bonds carries it to the grate...','Threads it through. Stretches...','The wire stops short.','A spark hits wet stone. Nothing.','The wire is spent.'];
+  WIRE.animFrame = 0; popup.answer = '';
   let i = 0;
-  WIRE_PUZZLE.animFrame = 0;
-
-  function nextLine() {
-    i++;
-    WIRE_PUZZLE.animFrame = i;
-    if (i < lines.length) {
-      setTimeout(nextLine, lines[i] === '...' ? 600 : 1200);
-    } else {
-      // Animation done
-      setTimeout(() => {
-        if (success) {
-          WIRE_PUZZLE.state = 'solved';
-          popup.feedback = 'The wire hums. The circuit holds.';
-          popup.feedbackColor = '#1a6a2a';
-          popup.pendingStir = true;
-        } else {
-          WIRE_PUZZLE.state = 'failed';
-          popup.feedback = 'The wire is spent. No second chances.';
-          popup.feedbackColor = '#8a2020';
-        }
-      }, 800);
-    }
-  }
-  setTimeout(nextLine, 1200);
+  (function next() {
+    i++; WIRE.animFrame = i;
+    if (i < WIRE.animLines.length) setTimeout(next, 1200);
+    else setTimeout(() => {
+      popup.feedback = ok ? 'The wire hums. The circuit holds.' : 'The wire is spent. No second chances.';
+      popup.feedbackColor = ok ? '#1a6a2a' : '#8a2020';
+      if (ok) popup.pendingStir = true;
+    }, 800);
+  })();
 }
 
 function closePopup() {
+  if (popup.isVent && WIRE.stage === 2 && popup.ventPages && popup.ventPage >= popup.ventPages.length - 1) {
+    WIRE.stage = 4;
+  }
   const shouldStir = popup.pendingStir;
   popup.open = false;
   popup.station = null;
@@ -1023,12 +980,12 @@ function drawProximityHint() {
   }
 
   // Beast vent (wire puzzle)
-  if (Math.abs(pcol - WIRE_PUZZLE.nearCol) <= 1 && Math.abs(prow - WIRE_PUZZLE.nearRow) <= 1) {
+  if (Math.abs(pcol - WIRE.nearCol) <= 1 && Math.abs(prow - WIRE.nearRow) <= 1) {
     ctx.save();
     ctx.font = '10px "Press Start 2P", monospace';
     ctx.fillStyle = '#e67e22';
     ctx.textAlign = 'center';
-    ctx.fillText('[SPACE]', WIRE_PUZZLE.nearCol * TILE + TILE / 2, WIRE_PUZZLE.nearRow * TILE - 4);
+    ctx.fillText('[SPACE]', WIRE.nearCol * TILE + TILE / 2, WIRE.nearRow * TILE - 4);
     ctx.restore();
   }
 
@@ -1099,29 +1056,40 @@ function drawPopup() {
   ctx.textAlign = 'center';
 
   if (popup.isWire) {
-    // ========= WIRE PUZZLE VIEW =========
-    ctx.font = '11px "Press Start 2P", monospace';
+    // ========= BEAST VENT / WIRE QUEST VIEW =========
+    ctx.font = '10px "Press Start 2P", monospace';
     ctx.fillStyle = '#8a6a20';
-    ctx.fillText('The Wire', W / 2, by + 30);
+    ctx.fillText('~ Through the grate ~', W / 2, by + 28);
 
-    if (WIRE_PUZZLE.state === 'asking') {
-      // Show puzzle description
-      ctx.font = '8px "Press Start 2P", monospace';
-      ctx.fillStyle = POP.flavor;
-      wrapText('Through the grate you see two contact points in the Beast\'s cell. A metal plate on the wall, and a terminal by the door.', W / 2, by + 52, bw - 40, 13);
-
+    if (WIRE.stage <= 1) {
+      ctx.font = '9px "Press Start 2P", monospace';
       ctx.fillStyle = POP.text;
-      wrapText('Horizontal gap: 3 brick-lengths. Vertical gap: 4 brick-lengths. The wire must go diagonally, held taut.', W / 2, by + 105, bw - 40, 13);
-
+      wrapText('You peer through the grate. Pitch black. You can\'t see anything.', W / 2, by + 60, bw - 40, 15);
+      ctx.font = '8px "Press Start 2P", monospace';
+      ctx.fillStyle = POP.hint;
+      ctx.fillText('[SPACE] to close', W / 2, by + bh - 16);
+    } else if (WIRE.stage === 2 || WIRE.stage === 3) {
+      ctx.font = '9px "Press Start 2P", monospace';
+      ctx.fillStyle = POP.text;
+      wrapText('The light spills through. You can see into a dark chamber. Something is moving in there.', W / 2, by + 55, bw - 40, 14);
+      wrapText('On the far side \u2014 a door, with some kind of electrical switch.', W / 2, by + 110, bw - 40, 14);
+      ctx.fillStyle = POP.flavor;
+      wrapText('Maybe N-Strokes would know what to do.', W / 2, by + 155, bw - 40, 14);
+      ctx.font = '8px "Press Start 2P", monospace';
+      ctx.fillStyle = POP.hint;
+      ctx.fillText('[SPACE] to close', W / 2, by + bh - 16);
+    } else if (WIRE.stage === 4) {
+      ctx.font = '9px "Press Start 2P", monospace';
+      ctx.fillStyle = POP.text;
+      wrapText('You study the gap between the light terminal and the door switch.', W / 2, by + 52, bw - 40, 13);
       ctx.fillStyle = '#8a6a20';
-      wrapText('N-Strokes has 7 brick-lengths of wire. He gets one cut. How many brick-lengths should the piece be?', W / 2, by + 160, bw - 40, 13);
-
-      // Input box
+      wrapText('Horizontal: 3 square-lengths. Vertical: 4 square-lengths. The wire must go diagonally, held taut.', W / 2, by + 95, bw - 40, 13);
+      ctx.fillStyle = POP.text;
+      wrapText('How many square-lengths should N-Strokes cut?', W / 2, by + 150, bw - 40, 13);
       const inputY = by + bh - 80;
       ctx.fillStyle = POP.input;
       ctx.fillRect(W / 2 - 60, inputY, 120, 24);
-      ctx.strokeStyle = '#8a6a20';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#8a6a20'; ctx.lineWidth = 2;
       ctx.strokeRect(W / 2 - 60, inputY, 120, 24);
       ctx.font = '12px "Press Start 2P", monospace';
       ctx.fillStyle = POP.text;
@@ -1131,29 +1099,22 @@ function drawPopup() {
         ctx.fillStyle = '#8a6a20';
         ctx.fillRect(W / 2 + tw / 2 + 2, inputY + 5, 8, 14);
       }
-
       ctx.font = '8px "Press Start 2P", monospace';
       ctx.fillStyle = '#8a2020';
       ctx.fillText('ONE CHANCE. No retries.', W / 2, by + bh - 36);
       ctx.fillStyle = POP.hint;
       ctx.fillText('ENTER submit \u00B7 ESC close', W / 2, by + bh - 16);
-
-    } else if (WIRE_PUZZLE.state === 'animating') {
-      // Show animation lines
+    } else if (WIRE.animFrame < WIRE.animLines.length) {
       ctx.font = '9px "Press Start 2P", monospace';
       ctx.fillStyle = POP.text;
-      let ty = by + 55;
-      for (let i = 0; i <= WIRE_PUZZLE.animFrame && i < WIRE_PUZZLE.animLines.length; i++) {
-        wrapText(WIRE_PUZZLE.animLines[i], W / 2, ty, bw - 40, 14);
-        ty += 28;
+      let aty = by + 50;
+      for (let i = 0; i <= WIRE.animFrame && i < WIRE.animLines.length; i++) {
+        wrapText(WIRE.animLines[i], W / 2, aty, bw - 40, 14); aty += 26;
       }
-
     } else {
-      // Solved or failed — show result
       ctx.font = '9px "Press Start 2P", monospace';
       ctx.fillStyle = popup.feedbackColor;
       wrapText(popup.feedback, W / 2, by + 70, bw - 40, 16);
-
       ctx.font = '8px "Press Start 2P", monospace';
       ctx.fillStyle = POP.hint;
       ctx.fillText('[SPACE] to close', W / 2, by + bh - 16);
@@ -1174,26 +1135,20 @@ function drawPopup() {
     ctx.fillText('[SPACE] to close', W / 2, by + bh - 16);
 
   } else if (popup.isVent) {
-    // ========= VENT / N-STROKES VIEW =========
+    // ========= VENT / N-STROKES DIALOGUE =========
+    const pg = popup.ventPages[popup.ventPage];
     ctx.font = '10px "Press Start 2P", monospace';
     ctx.fillStyle = '#5a8a5a';
-    ctx.fillText('~ Through the vent ~', W / 2, by + 30);
-
-    ctx.font = '12px "Press Start 2P", monospace';
-    ctx.fillStyle = '#3a7a3a';
-    ctx.fillText('N-Strokes', W / 2, by + 56);
-
+    ctx.fillText('~ Through the vent ~', W / 2, by + 28);
+    ctx.font = '11px "Press Start 2P", monospace';
+    ctx.fillStyle = pg.speaker === 'N-Strokes' ? '#3a7a3a' : '#b08030';
+    ctx.fillText(pg.speaker, W / 2, by + 54);
     ctx.font = '9px "Press Start 2P", monospace';
     ctx.fillStyle = POP.text;
-    wrapText('"Harry Bonds? Is that you?"', W / 2, by + 90, bw - 50, 16);
-
-    // Placeholder for future menu options
+    wrapText(pg.text, W / 2, by + 80, bw - 40, 15);
     ctx.font = '8px "Press Start 2P", monospace';
-    ctx.fillStyle = POP.flavor;
-    ctx.fillText('...', W / 2, by + 130);
-
     ctx.fillStyle = POP.hint;
-    ctx.fillText('[SPACE] to close', W / 2, by + bh - 16);
+    ctx.fillText(popup.ventPage < popup.ventPages.length - 1 ? '[SPACE] to continue' : '[SPACE] to close', W / 2, by + bh - 16);
 
   } else if (popup.isDoor && doorPage === 0) {
     // ========= MASTER DOOR PAGE 1: Navier-Stokes =========
@@ -1519,8 +1474,8 @@ function triggerBeastStir() {
 
 // Wire puzzle contact points and solved wire
 function drawWireContactPoints() {
-  const pA = WIRE_PUZZLE.pointA;
-  const pB = WIRE_PUZZLE.pointB;
+  const pA = WIRE.pointA;
+  const pB = WIRE.pointB;
 
   // Contact point A: small metal plate on wall
   ctx.fillStyle = '#5a5a6a';
@@ -1535,7 +1490,7 @@ function drawWireContactPoints() {
   ctx.fillRect(pB.x - 2, pB.y - 2, 4, 4);
 
   // If solved, draw glowing wire diagonally
-  if (WIRE_PUZZLE.state === 'solved') {
+  if (WIRE.stage === 5) {
     ctx.save();
     ctx.strokeStyle = '#e6a832';
     ctx.lineWidth = 2;
@@ -1561,10 +1516,10 @@ function drawWireContactPoints() {
   }
 
   // If near the vent and unsolved, show distance labels
-  if (WIRE_PUZZLE.state === 'unsolved' || WIRE_PUZZLE.state === 'asking') {
+  if (WIRE.stage <= 4) {
     const pcol = Math.round(player.x / TILE);
     const prow = Math.round(player.y / TILE);
-    if (Math.abs(pcol - WIRE_PUZZLE.nearCol) <= 2 && Math.abs(prow - WIRE_PUZZLE.nearRow) <= 2) {
+    if (Math.abs(pcol - WIRE.nearCol) <= 2 && Math.abs(prow - WIRE.nearRow) <= 2) {
       ctx.save();
       ctx.setLineDash([4, 4]);
       ctx.strokeStyle = 'rgba(200, 200, 200, 0.4)';
@@ -1598,7 +1553,7 @@ function drawLightBeams() {
   for (const st of STATIONS) {
     if (st.solved) lightRows.push(st.lightRow);
   }
-  if (WIRE_PUZZLE.state === 'solved') lightRows.push(WIRE_PUZZLE.lightRow);
+  if (WIRE.stage === 5) lightRows.push(WIRE.lightRow);
 
   for (const lr of lightRows) {
     const ly = lr * TILE + TILE / 2;
@@ -1643,7 +1598,7 @@ function drawBeast() {
   for (const st of STATIONS) {
     if (st.solved) lightRows.push(st.lightRow);
   }
-  if (WIRE_PUZZLE.state === 'solved') lightRows.push(WIRE_PUZZLE.lightRow);
+  if (WIRE.stage === 5) lightRows.push(WIRE.lightRow);
   if (lightRows.length === 0) return;
 
   let shakeX = 0;
