@@ -614,25 +614,21 @@ function startBeastScene() {
   beastScene.laptopX = BEAST_CX;
   beastScene.laptopY = BEAST_CY;
   beastScene.showLaptop = true;  // laptop visible from the start
-  // Target offsets: beast walks from its natural position (0,0 offset) northward and along corridor
-  const exitY = (1.5 * TILE) - BEAST_CY;  // offset to reach corridor
-  const exitX_mid = (10 * TILE) - BEAST_CX;
-  const exitX_far = (16 * TILE) - BEAST_CX;
-  const exitX_end = (21 * TILE) - BEAST_CX;
-  const exitX_gone = (24 * TILE) - BEAST_CX;
+  // Target offsets from beast's natural draw position
+  const corrY = (1.5 * TILE) - BEAST_CY;  // center beast in corridor vertically
+  const gone = (COLS * TILE + 200) - BEAST_CX; // far enough right to be fully off screen
   beastScene.steps = [
     { target: { x: 0, y: 0 }, text: '', pause: 30 },
     { target: { x: 6, y: 0 }, text: '', pause: 8 },
     { target: { x: -6, y: 0 }, text: '', pause: 8 },
     { target: { x: 4, y: 0 }, text: '', pause: 8 },
     { target: { x: -4, y: 0 }, text: '', pause: 8 },
-    { target: { x: 0, y: 0 }, text: '', pause: 20 },
-    { target: { x: 0, y: exitY }, text: '', pause: 10, rotate: true },
-    { target: { x: exitX_end, y: exitY }, text: '', pause: 0 },
-    { target: { x: exitX_gone, y: exitY }, text: '', pause: 40 },
-    { target: { x: exitX_gone, y: exitY }, text: '"Damn you! Get back in there!"', pause: 80 },
-    { target: { x: exitX_gone, y: exitY }, text: '"Get! GET! That infernal Harry Bonds!"', pause: 80 },
-    { target: { x: exitX_gone, y: exitY }, text: '[Commotion ensues]', pause: 80 },
+    { target: { x: 0, y: 0 }, text: '', pause: 15 },
+    { target: { x: 0, y: corrY }, text: '', pause: 10, rotate: true },
+    { target: { x: gone, y: corrY }, text: '', pause: 40 },
+    { target: { x: gone, y: corrY }, text: '"Damn you! Get back in there!"', pause: 80 },
+    { target: { x: gone, y: corrY }, text: '"Get! GET! That infernal Harry Bonds!"', pause: 80 },
+    { target: { x: gone, y: corrY }, text: '[Commotion ensues]', pause: 80 },
   ];
   beastScene.rotated = false;
   beastScene.stepIndex = 0;
