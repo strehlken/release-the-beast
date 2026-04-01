@@ -83,6 +83,7 @@ const WIRE = {
   lightRow: 5,
   animFrame: 0,
   animLines: [],
+  animating: false,
 };
 
 // Big puzzle door on north wall (cols 12-13, row 3)
@@ -240,6 +241,7 @@ function resetGame() {
   WIRE.stage = 0;
   WIRE.animFrame = 0;
   WIRE.animLines = [];
+  WIRE.animating = false;
   closePopup();
   paused = false;
   codesScreen = false;
@@ -476,7 +478,7 @@ window.addEventListener('keydown', e => {
   // Typing into popup
   if (popup.open && !popup.solvedView && !popup.isDoor && !popup.isVent && !popup.isLocked) {
     // Wire puzzle input
-    if (popup.isWire && WIRE.stage === 4) {
+    if (popup.isWire && WIRE.stage === 4 && !WIRE.animating) {
       if (e.key === 'Backspace') {
         popup.answer = popup.answer.slice(0, -1);
       } else if (e.key === 'Enter') {
@@ -580,7 +582,8 @@ async function submitWireAnswer() {
   if (!popup.answer.trim()) return;
   const hash = await sha256(popup.answer.trim());
   const ok = hash === WIRE.answerHash;
-  if (!ok) WIRE.stage = 6;  // stage 5 set when beast scene starts
+  if (!ok) WIRE.stage = 6;
+  WIRE.animating = true;  // hide input during animation
   WIRE.animLines = ok
     ? ['N-Strokes cuts the wire. "Here you go."','He feeds it through the vent.','Harry Bonds carries it to the grate...','Threads it through. It pulls taut.','Clicks into the terminal.','A spark. A hum. The circuit holds.']
     : ['N-Strokes cuts the wire. "Here you go."','He feeds it through the vent.','Harry Bonds carries it to the grate...','Threads it through. Stretches...','The wire stops short.','A spark hits wet stone. Nothing.','The wire is spent.'];
@@ -610,7 +613,7 @@ function startBeastScene() {
   beastScene.beastY = 0;
   beastScene.laptopX = BEAST_CX;
   beastScene.laptopY = BEAST_CY;
-  beastScene.showLaptop = false;
+  beastScene.showLaptop = true;  // laptop visible from the start
   // Target offsets: beast walks from its natural position (0,0 offset) northward and along corridor
   const exitY = (1.5 * TILE) - BEAST_CY;  // offset to reach corridor
   const exitX_mid = (10 * TILE) - BEAST_CX;
@@ -675,7 +678,6 @@ function updateBeastScene() {
 
 function endBeastScene() {
   beastScene.active = false;
-  beastScene.showLaptop = true;
   beastScene.text = '';
 }
 
@@ -1206,6 +1208,14 @@ function drawPopup() {
       ctx.font = '8px "Press Start 2P", monospace';
       ctx.fillStyle = POP.hint;
       ctx.fillText('[SPACE] to close', W / 2, by + bh - 16);
+    } else if (WIRE.animating) {
+      // Show animation lines during wire threading
+      ctx.font = '9px "Press Start 2P", monospace';
+      ctx.fillStyle = POP.text;
+      let aty = by + 50;
+      for (let i = 0; i <= WIRE.animFrame && i < WIRE.animLines.length; i++) {
+        wrapText(WIRE.animLines[i], W / 2, aty, bw - 40, 14); aty += 26;
+      }
     } else if (WIRE.stage === 4) {
       ctx.font = '9px "Press Start 2P", monospace';
       ctx.fillStyle = POP.text;
@@ -1767,7 +1777,6 @@ function drawBeast() {
   if (inCutscene && beastScene.rotated) {
     ctx.translate(BEAST_CX, BEAST_CY);
     ctx.rotate(Math.PI / 2);
-    ctx.scale(0.3, 0.3); // scale down to fit corridor
     ctx.translate(-BEAST_CX, -BEAST_CY);
   }
 
