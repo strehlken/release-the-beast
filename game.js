@@ -157,7 +157,6 @@ function resetGame() {
   WIRE_PUZZLE.state = 'unsolved';
   WIRE_PUZZLE.animFrame = 0;
   WIRE_PUZZLE.animLines = [];
-  cutscene.active = false;
   closePopup();
   paused = false;
   codesScreen = false;
@@ -440,143 +439,72 @@ function openWirePuzzle() {
   popup.feedback = '';
 }
 
-// Wire cutscene state
-const cutscene = {
-  active: false,
-  success: false,
-  steps: [],       // { target: {x,y}, text: string, pause: number }
-  stepIndex: 0,
-  phase: 'walk',   // 'walk', 'pause', 'done'
-  pauseTimer: 0,
-  text: '',
-  textColor: '#ecf0f1',
-};
-
 async function submitWireAnswer() {
   if (!popup.answer.trim()) return;
   const hash = await sha256(popup.answer.trim());
-  const isCorrect = hash === WIRE_PUZZLE.answerHash;
-  const givenAnswer = popup.answer.trim();
 
-  // Close the popup, start the cutscene
-  popup.open = false;
-  popup.isWire = false;
-  popup.answer = '';
-  WIRE_PUZZLE.state = 'animating';
-
-  // Waypoints: beast vent → N-Strokes vent → back to beast vent
-  const beastVent = { x: WIRE_PUZZLE.nearCol * TILE, y: WIRE_PUZZLE.nearRow * TILE };
-  const nstrokesVent = { x: VENT.nearCol * TILE, y: VENT.nearRow * TILE };
-
-  if (isCorrect) {
-    cutscene.steps = [
-      { target: beastVent, text: '', pause: 0 },
-      { target: beastVent, text: '"Five brick-lengths," Harry Bonds says through the vent.', pause: 90 },
-      { target: nstrokesVent, text: 'Harry Bonds walks to N-Strokes\' cell.', pause: 0 },
-      { target: nstrokesVent, text: 'N-Strokes cuts the wire. Passes it through.', pause: 90 },
-      { target: beastVent, text: 'Harry Bonds carries the wire back.', pause: 0 },
-      { target: beastVent, text: 'He threads it through the vent crack...', pause: 90 },
-      { target: beastVent, text: 'It pulls taut. Reaches. Clicks into the terminal.', pause: 90 },
-      { target: beastVent, text: 'A spark. A hum. The circuit holds.', pause: 120 },
-      { target: beastVent, text: 'Deep in the darkness, something stirs.', pause: 120 },
+  if (hash === WIRE_PUZZLE.answerHash) {
+    // Correct — run success animation
+    WIRE_PUZZLE.state = 'animating';
+    WIRE_PUZZLE.animLines = [
+      "Harry Bonds threads the wire through the vent crack...",
+      "He walks to N-Strokes' cell.",
+      '"Five brick-lengths," Harry Bonds says.',
+      'N-Strokes cuts the wire. Passes it back.',
+      "Harry Bonds stretches the wire across the gap...",
+      "It pulls taut. Reaches. Clicks into the terminal.",
+      "A spark. A hum. The circuit holds.",
+      "Deep in the darkness, something stirs.",
     ];
-    cutscene.success = true;
+    WIRE_PUZZLE.animFrame = 0;
+    popup.answer = '';
+    runWireAnimation(true);
   } else {
-    cutscene.steps = [
-      { target: beastVent, text: '', pause: 0 },
-      { target: beastVent, text: '"' + givenAnswer + ' brick-lengths," Harry Bonds says through the vent.', pause: 90 },
-      { target: nstrokesVent, text: 'Harry Bonds walks to N-Strokes\' cell.', pause: 0 },
-      { target: nstrokesVent, text: 'N-Strokes cuts the wire. Passes it through.', pause: 90 },
-      { target: beastVent, text: 'Harry Bonds carries the wire back.', pause: 0 },
-      { target: beastVent, text: 'He threads it through the vent crack...', pause: 90 },
-      { target: beastVent, text: 'The wire pulls taut and stops three inches short.', pause: 100 },
-      { target: beastVent, text: 'A spark hits wet stone. Nothing.', pause: 100 },
-      { target: beastVent, text: 'The wire is spent.', pause: 120 },
+    // Wrong — run failure animation
+    WIRE_PUZZLE.state = 'animating';
+    WIRE_PUZZLE.animLines = [
+      "Harry Bonds threads the wire through the vent crack...",
+      "He walks to N-Strokes' cell.",
+      '"' + popup.answer.trim() + ' brick-lengths," Harry Bonds says.',
+      'N-Strokes cuts the wire. Passes it back.',
+      "Harry Bonds stretches the wire across the gap...",
+      "The wire pulls taut and stops three inches short.",
+      "A spark hits wet stone. Nothing.",
+      "The wire is spent.",
     ];
-    cutscene.success = false;
+    WIRE_PUZZLE.animFrame = 0;
+    popup.answer = '';
+    runWireAnimation(false);
   }
-
-  cutscene.active = true;
-  cutscene.stepIndex = 0;
-  cutscene.phase = 'walk';
-  cutscene.pauseTimer = 0;
-  cutscene.text = '';
 }
 
-function updateCutscene() {
-  if (!cutscene.active) return;
-  const step = cutscene.steps[cutscene.stepIndex];
-  if (!step) { endCutscene(); return; }
+function runWireAnimation(success) {
+  const lines = WIRE_PUZZLE.animLines;
+  let i = 0;
+  WIRE_PUZZLE.animFrame = 0;
 
-  if (cutscene.phase === 'walk') {
-    // Move player toward target
-    const dx = step.target.x - player.x;
-    const dy = step.target.y - player.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-
-    if (dist < 3) {
-      // Arrived — show text and pause
-      player.x = step.target.x;
-      player.y = step.target.y;
-      cutscene.text = step.text;
-      cutscene.textColor = '#ecf0f1';
-      if (step.pause > 0) {
-        cutscene.phase = 'pause';
-        cutscene.pauseTimer = step.pause;
-      } else {
-        // No pause, advance immediately
-        cutscene.stepIndex++;
-        cutscene.phase = 'walk';
-      }
+  function nextLine() {
+    i++;
+    WIRE_PUZZLE.animFrame = i;
+    if (i < lines.length) {
+      setTimeout(nextLine, lines[i] === '...' ? 600 : 1200);
     } else {
-      // Walk toward target
-      const speed = 2.5;
-      player.x += (dx / dist) * speed;
-      player.y += (dy / dist) * speed;
-      // Update facing
-      if (Math.abs(dx) > Math.abs(dy)) {
-        facing = dx > 0 ? 'right' : 'left';
-      } else {
-        facing = dy > 0 ? 'down' : 'up';
-      }
-    }
-  } else if (cutscene.phase === 'pause') {
-    cutscene.pauseTimer--;
-    if (cutscene.pauseTimer <= 0) {
-      cutscene.stepIndex++;
-      cutscene.phase = 'walk';
+      // Animation done
+      setTimeout(() => {
+        if (success) {
+          WIRE_PUZZLE.state = 'solved';
+          popup.feedback = 'The wire hums. The circuit holds.';
+          popup.feedbackColor = '#1a6a2a';
+          popup.pendingStir = true;
+        } else {
+          WIRE_PUZZLE.state = 'failed';
+          popup.feedback = 'The wire is spent. No second chances.';
+          popup.feedbackColor = '#8a2020';
+        }
+      }, 800);
     }
   }
-}
-
-function endCutscene() {
-  cutscene.active = false;
-  if (cutscene.success) {
-    WIRE_PUZZLE.state = 'solved';
-    setTimeout(triggerBeastStir, 500);
-  } else {
-    WIRE_PUZZLE.state = 'failed';
-  }
-}
-
-function drawCutsceneText() {
-  if (!cutscene.active || !cutscene.text) return;
-  // Dark bar at bottom of screen
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
-  ctx.fillRect(0, H - 44, W, 44);
-  ctx.strokeStyle = '#3d3d5c';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(0, H - 44);
-  ctx.lineTo(W, H - 44);
-  ctx.stroke();
-  // Text
-  ctx.save();
-  ctx.font = '8px "Press Start 2P", monospace';
-  ctx.fillStyle = cutscene.textColor;
-  ctx.textAlign = 'center';
-  wrapText(cutscene.text, W / 2, H - 24, W - 40, 14);
-  ctx.restore();
+  setTimeout(nextLine, 1200);
 }
 
 function closePopup() {
@@ -1079,6 +1007,16 @@ function drawPopup() {
       ctx.fillText('ONE CHANCE. No retries.', W / 2, by + bh - 36);
       ctx.fillStyle = POP.hint;
       ctx.fillText('ENTER submit \u00B7 ESC close', W / 2, by + bh - 16);
+
+    } else if (WIRE_PUZZLE.state === 'animating') {
+      // Show animation lines
+      ctx.font = '9px "Press Start 2P", monospace';
+      ctx.fillStyle = POP.text;
+      let ty = by + 55;
+      for (let i = 0; i <= WIRE_PUZZLE.animFrame && i < WIRE_PUZZLE.animLines.length; i++) {
+        wrapText(WIRE_PUZZLE.animLines[i], W / 2, ty, bw - 40, 14);
+        ty += 28;
+      }
 
     } else {
       // Solved or failed — show result
@@ -1632,7 +1570,6 @@ function drawBeast() {
 // --- Update & Render ---
 
 function update() {
-  if (cutscene.active) { updateCutscene(); return; }
   if (popup.open || paused) return;
 
   let nx = player.x;
@@ -1695,7 +1632,6 @@ function render() {
   drawProximityHint();
   drawPlayer();
   drawPopup();
-  drawCutsceneText();
   drawPauseMenu();
 }
 
