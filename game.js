@@ -39,7 +39,7 @@ const MAP = [
   [ 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], // 0
   [ 1,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,1], // 1
   [ 1,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,1], // 2
-  [ 1,1,1,6,1,1,1,1,1,1,1,1,7,7,1,1,1,1,1,1,6,1,1], // 3
+  [ 1,6,6,6,6,1,1,1,1,1,1,1,7,7,1,1,1,1,1,1,6,1,1], // 3  beast door 4-wide
   [ 1,3,3,3,3,3,3,1,0,0,0,0,0,0,0,0,0,0,1,5,5,5,1], // 4
   [ 1,3,3,3,3,3,3,1,0,0,0,0,0,0,0,0,0,0,1,5,5,5,1], // 5
   [ 1,3,3,3,3,3,3,1,0,0,0,0,0,0,0,0,0,0,1,5,5,5,1], // 6
@@ -146,6 +146,19 @@ const popup = {
 // Pause menu
 let paused = false;
 let victoryScreen = false;
+
+// Beast escape cutscene
+const beastScene = {
+  active: false,
+  beastX: 0, beastY: 0,
+  steps: [],
+  stepIndex: 0,
+  phase: 'walk',
+  pauseTimer: 0,
+  text: '',
+  laptopX: 0, laptopY: 0,
+  showLaptop: false,
+};
 let codesScreen = false;
 let codeInput = '';
 let codeMessage = '';
@@ -218,6 +231,9 @@ function resetGame() {
   doorPage = 0;
   MAP[3][12] = 7; // restore door tiles
   MAP[3][13] = 7;
+  MAP[3][1] = 6; MAP[3][2] = 6; MAP[3][3] = 6; MAP[3][4] = 6; // restore beast door
+  beastScene.active = false;
+  beastScene.showLaptop = false;
   victoryScreen = false;
   WIRE.stage = 0;
   WIRE.animFrame = 0;
@@ -572,11 +588,139 @@ async function submitWireAnswer() {
     i++; WIRE.animFrame = i;
     if (i < WIRE.animLines.length) setTimeout(next, 1200);
     else setTimeout(() => {
-      popup.feedback = ok ? 'The wire hums. The circuit holds.' : 'The wire is spent. No second chances.';
-      popup.feedbackColor = ok ? '#1a6a2a' : '#8a2020';
-      if (ok) popup.pendingStir = true;
+      if (ok) {
+        // Close popup, open beast doors, start beast cutscene
+        popup.open = false; popup.isWire = false;
+        MAP[3][1] = 4; MAP[3][2] = 4; MAP[3][3] = 4; MAP[3][4] = 4;
+        startBeastScene();
+      } else {
+        popup.feedback = 'The wire is spent. No second chances.';
+        popup.feedbackColor = '#8a2020';
+      }
     }, 800);
   })();
+}
+
+function startBeastScene() {
+  const cx = 3.5 * TILE;
+  const cy = 7 * TILE;
+  beastScene.beastX = cx;
+  beastScene.beastY = cy;
+  beastScene.laptopX = cx;
+  beastScene.laptopY = cy;
+  beastScene.showLaptop = false;
+  beastScene.steps = [
+    { target: { x: cx, y: cy }, text: '', pause: 40 },
+    { target: { x: cx + 6, y: cy }, text: '', pause: 8 },
+    { target: { x: cx - 6, y: cy }, text: '', pause: 8 },
+    { target: { x: cx + 4, y: cy }, text: '', pause: 8 },
+    { target: { x: cx - 4, y: cy }, text: '', pause: 8 },
+    { target: { x: cx, y: cy }, text: '', pause: 20 },
+    { target: { x: cx, y: 2.5 * TILE }, text: '', pause: 0 },
+    { target: { x: cx, y: 1.5 * TILE }, text: '', pause: 10 },
+    { target: { x: 10 * TILE, y: 1.5 * TILE }, text: '"Damn you! Get back in there!"', pause: 0 },
+    { target: { x: 16 * TILE, y: 1.5 * TILE }, text: '"Get! GET! That infernal Harry Bonds!"', pause: 0 },
+    { target: { x: 21 * TILE, y: 1.5 * TILE }, text: '[Commotion ensues]', pause: 60 },
+    { target: { x: 23 * TILE, y: 1.5 * TILE }, text: '', pause: 30 },
+  ];
+  beastScene.stepIndex = 0;
+  beastScene.phase = 'walk';
+  beastScene.pauseTimer = 0;
+  beastScene.text = '';
+  beastScene.active = true;
+}
+
+function updateBeastScene() {
+  if (!beastScene.active) return;
+  const step = beastScene.steps[beastScene.stepIndex];
+  if (!step) { endBeastScene(); return; }
+
+  if (beastScene.phase === 'walk') {
+    const dx = step.target.x - beastScene.beastX;
+    const dy = step.target.y - beastScene.beastY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 3) {
+      beastScene.beastX = step.target.x;
+      beastScene.beastY = step.target.y;
+      if (step.text) beastScene.text = step.text;
+      if (step.pause > 0) {
+        beastScene.phase = 'pause';
+        beastScene.pauseTimer = step.pause;
+      } else {
+        beastScene.stepIndex++;
+      }
+    } else {
+      const speed = 2;
+      beastScene.beastX += (dx / dist) * speed;
+      beastScene.beastY += (dy / dist) * speed;
+    }
+  } else if (beastScene.phase === 'pause') {
+    beastScene.pauseTimer--;
+    if (beastScene.pauseTimer <= 0) {
+      beastScene.stepIndex++;
+      beastScene.phase = 'walk';
+    }
+  }
+}
+
+function endBeastScene() {
+  beastScene.active = false;
+  beastScene.showLaptop = true;
+  beastScene.text = '';
+}
+
+function drawBeastSprite(x, y) {
+  // Small beast sprite for cutscene
+  const p = 3;
+  const cx = x, cy = y;
+  ctx.fillStyle = '#2a1a3a';
+  ctx.fillRect(cx - 4*p, cy - 6*p, 8*p, 10*p);
+  ctx.fillStyle = '#3a2a4a';
+  ctx.fillRect(cx - 3*p, cy - 7*p, 2*p, 2*p);
+  ctx.fillRect(cx + 1*p, cy - 7*p, 2*p, 2*p);
+  ctx.fillStyle = '#aa0000';
+  ctx.fillRect(cx - 2*p, cy - 5*p, 1*p, 1*p);
+  ctx.fillRect(cx + 1*p, cy - 5*p, 1*p, 1*p);
+  ctx.fillStyle = '#1a0a2a';
+  ctx.fillRect(cx - 4*p, cy + 3*p, 3*p, 3*p);
+  ctx.fillRect(cx + 1*p, cy + 3*p, 3*p, 3*p);
+}
+
+function drawLaptopSprite(x, y) {
+  const p = 2;
+  // Small laptop
+  ctx.fillStyle = '#3a3a4a';
+  ctx.fillRect(x - 4*p, y - 2*p, 8*p, 5*p);
+  ctx.fillStyle = '#1a4a7a';
+  ctx.fillRect(x - 3*p, y - 1*p, 6*p, 3*p);
+  ctx.fillStyle = '#2a2a3a';
+  ctx.fillRect(x - 5*p, y + 3*p, 10*p, 1*p);
+}
+
+function drawBeastScene() {
+  if (!beastScene.active && !beastScene.showLaptop) return;
+
+  // Draw laptop if beast has left
+  if (beastScene.showLaptop) {
+    drawLaptopSprite(beastScene.laptopX, beastScene.laptopY);
+  }
+
+  // Draw beast sprite during cutscene
+  if (beastScene.active) {
+    drawBeastSprite(beastScene.beastX, beastScene.beastY);
+
+    // Dialogue bar
+    if (beastScene.text) {
+      ctx.fillStyle = 'rgba(0,0,0,0.75)';
+      ctx.fillRect(0, H - 44, W, 44);
+      ctx.save();
+      ctx.font = '8px "Press Start 2P", monospace';
+      ctx.fillStyle = '#c0392b';
+      ctx.textAlign = 'center';
+      wrapText(beastScene.text, W / 2, H - 24, W - 40, 14);
+      ctx.restore();
+    }
+  }
 }
 
 function closePopup() {
@@ -1723,6 +1867,7 @@ function drawBeast() {
 // --- Update & Render ---
 
 function update() {
+  if (beastScene.active) { updateBeastScene(); return; }
   if (popup.open || paused || victoryScreen) return;
 
   let nx = player.x;
@@ -1782,6 +1927,7 @@ function render() {
   // N-Strokes
   drawNStrokes();
 
+  drawBeastScene();
   drawProximityHint();
   drawPlayer();
   drawPopup();
