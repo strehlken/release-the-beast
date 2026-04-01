@@ -142,6 +142,7 @@ const popup = {
   isVent: false, // true when talking through the vent
   isLocked: false, // true when showing locked-out message
   isWire: false,   // true when wire puzzle is active
+  isImage: false,  // true when showing full-screen image
 };
 
 // Pause menu
@@ -406,6 +407,7 @@ window.addEventListener('keydown', e => {
       if (PUZZLE_DOOR.wordleSolved || PUZZLE_DOOR.wordleLocked) { closePopup(); return; }
       return; // on page 1 unsolved, space does nothing (use Enter)
     }
+    if (popup.open && popup.isImage) { closePopup(); return; }
     if (popup.open && (popup.solvedView || popup.isLocked)) { closePopup(); return; }
     if (popup.open && popup.isVent) {
       if (popup.ventPage < popup.ventPages.length - 1) { popup.ventPage++; return; }
@@ -545,7 +547,23 @@ async function submitDoorAnswer() {
 }
 
 function openBeastVent() {
+  if (WIRE.stage === 9) {
+    // Show the beast_vent image
+    popup.open = true; popup.isImage = true;
+    return;
+  }
+  if (WIRE.stage === 8) {
+    // Told to look again by N-Strokes → show image, advance
+    WIRE.stage = 9;
+    popup.open = true; popup.isImage = true;
+    return;
+  }
   popup.open = true; popup.isWire = true; popup.answer = ''; popup.feedback = '';
+  if (WIRE.stage === 7) {
+    popup.feedback = 'The creature is gone. Maybe N-Strokes would know what happened.';
+    popup.feedbackColor = '#8a6a20';
+    return;
+  }
   if (WIRE.stage === 5) { popup.feedback = 'The wire hums. The circuit holds.'; popup.feedbackColor = '#1a6a2a'; return; }
   if (WIRE.stage === 6) { popup.feedback = 'A spent wire hangs limp.'; popup.feedbackColor = '#8a2020'; return; }
   if (!STATIONS[0].solved) { WIRE.stage = Math.max(WIRE.stage, 1); }
@@ -568,6 +586,13 @@ function openVentPopup() {
   } else if (WIRE.stage === 4) {
     popup.isVent = false; popup.isWire = true; popup.answer = ''; popup.feedback = '';
     return;
+  } else if (WIRE.stage === 7) {
+    popup.ventPages = [
+      { speaker: 'Harry Bonds', text: '"There was a creature and it just\u2014"' },
+      { speaker: 'N-Strokes', text: '"The Beast! I\'d forgotten! He can help us!"' },
+      { speaker: 'Harry Bonds', text: '"No, you don\'t get it. He just left."' },
+      { speaker: 'N-Strokes', text: '"Not the big oaf that wandered out \u2014 the BEAST! Go look again."' },
+    ];
   } else {
     popup.ventPages = [{ speaker: 'N-Strokes', text: '"Harry Bonds? Is that you?"' }];
   }
@@ -675,6 +700,7 @@ function updateBeastScene() {
 function endBeastScene() {
   beastScene.active = false;
   beastScene.text = '';
+  WIRE.stage = 7; // beast left, haven't talked to N-Strokes yet
 }
 
 function drawLaptopSprite(x, y) {
@@ -706,8 +732,9 @@ function drawBeastScene() {
 }
 
 function closePopup() {
-  if (popup.isVent && WIRE.stage === 2 && popup.ventPages && popup.ventPage >= popup.ventPages.length - 1) {
-    WIRE.stage = 4;
+  if (popup.isVent && popup.ventPages && popup.ventPage >= popup.ventPages.length - 1) {
+    if (WIRE.stage === 2) WIRE.stage = 4;
+    if (WIRE.stage === 7) WIRE.stage = 8;
   }
   const shouldStir = popup.pendingStir;
   popup.open = false;
@@ -722,6 +749,7 @@ function closePopup() {
   popup.isVent = false;
   popup.isLocked = false;
   popup.isWire = false;
+  popup.isImage = false;
   if (shouldStir) {
     setTimeout(triggerBeastStir, 1500);
   }
@@ -806,6 +834,10 @@ const TAUNTS = [
 
 // Canvas setup
 const canvas = document.getElementById('game');
+
+// Preload beast vent image
+const beastVentImg = new Image();
+beastVentImg.src = 'assets/beast_vent.jpg';
 const ctx = canvas.getContext('2d');
 canvas.width = W;
 canvas.height = H;
@@ -1161,7 +1193,30 @@ const POP = {
 
 function drawPopup() {
   if (!popup.open) return;
-  if (!popup.station && !popup.isVent && !popup.isLocked && !popup.isWire) return;
+  if (!popup.station && !popup.isVent && !popup.isLocked && !popup.isWire && !popup.isImage) return;
+
+  // Full-screen image view
+  if (popup.isImage) {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+    if (beastVentImg.complete && beastVentImg.naturalWidth > 0) {
+      // Scale image to fit canvas while maintaining aspect ratio
+      const imgAsp = beastVentImg.naturalWidth / beastVentImg.naturalHeight;
+      const canAsp = W / H;
+      let dw, dh;
+      if (imgAsp > canAsp) { dw = W; dh = W / imgAsp; }
+      else { dh = H; dw = H * imgAsp; }
+      ctx.drawImage(beastVentImg, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    }
+    ctx.save();
+    ctx.font = '8px "Press Start 2P", monospace';
+    ctx.fillStyle = 'rgba(200,200,200,0.6)';
+    ctx.textAlign = 'center';
+    ctx.fillText('[SPACE] or [ESC] to close', W / 2, H - 12);
+    ctx.restore();
+    return;
+  }
+
   const st = popup.station;
 
   ctx.fillStyle = 'rgba(0,0,0,0.6)';
