@@ -2042,7 +2042,7 @@ function drawWireContactPoints() {
   ctx.fillRect(pB.x - 2, pB.y - 2, 4, 4);
 
   // If solved, draw glowing wire diagonally
-  if (WIRE.stage === 5) {
+  if (WIRE.stage >= 5 && WIRE.stage !== 6) {
     ctx.save();
     ctx.strokeStyle = '#e6a832';
     ctx.lineWidth = 2;
@@ -2105,7 +2105,7 @@ function drawLightBeams() {
   for (const st of STATIONS) {
     if (st.solved) lightRows.push(st.lightRow);
   }
-  if (WIRE.stage === 5) lightRows.push(WIRE.lightRow);
+  if (WIRE.stage >= 5 && WIRE.stage !== 6) lightRows.push(WIRE.lightRow);
 
   for (const lr of lightRows) {
     const ly = lr * TILE + TILE / 2;
@@ -2158,7 +2158,7 @@ function drawBeast() {
     for (const st of STATIONS) {
       if (st.solved) lightRows.push(st.lightRow);
     }
-    if (WIRE.stage === 5) lightRows.push(WIRE.lightRow);
+    if (WIRE.stage >= 5 && WIRE.stage !== 6) lightRows.push(WIRE.lightRow);
     if (lightRows.length === 0) return;
 
     // Clip to spotlight cones
