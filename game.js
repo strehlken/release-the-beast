@@ -1071,7 +1071,15 @@ function openSolvedPopup(station) {
   popup.station = station;
   popup.solvedView = true;
   popup.saveCode = getStateCode() || '';
+  popup.answer = '';
+  popup.feedback = '';
   popup.isDoor = false;
+  popup.isVent = false;
+  popup.isWire = false;
+  popup.isImage = false;
+  popup.isWordleViz = false;
+  popup.isDoorMenu = false;
+  popup.isLocked = false;
 }
 
 async function sha256(str) {
