@@ -928,7 +928,7 @@ function closePopup() {
   if (popup.isVent && popup.ventPages && popup.ventPage >= popup.ventPages.length - 1) {
     if (WIRE.stage === 2) WIRE.stage = 4;
     if (WIRE.stage === 7) WIRE.stage = 8;
-    if (wordleTeach.phase === 0 && popup.ventPages.length > 5) wordleTeach.phase = 1;
+    if (wordleTeach.phase === 0 && doorViewed && popup.ventPages.length > 10) wordleTeach.phase = 1;
   }
   const shouldStir = popup.pendingStir;
   popup.open = false;
