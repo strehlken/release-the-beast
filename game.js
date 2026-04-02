@@ -169,6 +169,8 @@ function restoreFromStateCode(code) {
   // Restore state from bitmask
   if (bits & MILESTONES.farmer) {
     STATIONS[0].solved = true;
+    STATIONS[0].locked = false;
+    STATIONS[0].attempts = 0;
     STATIONS[0].correctAnswer = '3';
   }
   if (bits & MILESTONES.wire) {
@@ -580,7 +582,15 @@ window.addEventListener('keydown', e => {
     for (const st of STATIONS) {
       if (Math.abs(pcol - st.nearCol) <= 1 && Math.abs(prow - st.nearRow) <= 1) {
         if (st.solved) {
-          openSolvedPopup(st);
+          // Terminal mode: just show the code
+          popup.open = true;
+          popup.station = st;
+          popup.solvedView = true;
+          popup.saveCode = getStateCode() || '';
+          popup.answer = ''; popup.feedback = '';
+          popup.isDoor = false; popup.isVent = false; popup.isWire = false;
+          popup.isImage = false; popup.isWordleViz = false; popup.isDoorMenu = false;
+          popup.isLocked = false;
         } else if (st.locked) {
           openLockedPopup(st);
         } else {
