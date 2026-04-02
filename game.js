@@ -2301,7 +2301,16 @@ function drawBeast() {
 // --- Update & Render ---
 
 function update() {
-  if (beastScene.active) { updateBeastScene(); return; }
+  if (beastScene.active) {
+    updateBeastScene();
+    // Allow player movement during dialogue-only steps (beast off screen)
+    const step = beastScene.steps[beastScene.stepIndex];
+    if (step && step.text && beastScene.phase === 'pause') {
+      // Fall through to player movement
+    } else {
+      return;
+    }
+  }
   if (popup.open || paused || victoryScreen) return;
 
   let nx = player.x;
