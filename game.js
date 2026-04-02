@@ -437,7 +437,11 @@ window.addEventListener('keydown', e => {
     }
     if (popup.open && popup.isImage) { closePopup(); return; }
     if (popup.open && popup.isWordleViz) return;
-    if (popup.open && popup.isDoorMenu) return; // space does nothing, use arrows+enter
+    if (popup.open && popup.isDoorMenu) {
+      if (menuSel === 0) { closePopup(); openDoorPopup(); }
+      if (menuSel === 1) { closePopup(); openWordleViz(); }
+      return;
+    }
     if (popup.open && (popup.solvedView || popup.isLocked)) { closePopup(); return; }
     if (popup.open && popup.isVent) {
       if (popup.ventPage < popup.ventPages.length - 1) { popup.ventPage++; return; }
@@ -1497,7 +1501,7 @@ function drawPopup() {
     ctx.font = '10px "Press Start 2P", monospace';
     ctx.fillStyle = '#c8c8d0';
     if (wordleViz.mode === 'test') {
-      ctx.fillText('Can ANGER produce this pattern?', W / 2, 30);
+      wrapText('If ANGER were the answer, some guess would have to make this pattern. Does such a guess exist?', W / 2, 22, W - 60, 13);
       const tpx = W / 2 - ((5 * (tileS + gap)) - gap) / 2;
       for (let i = 0; i < 5; i++) {
         ctx.fillStyle = wColors[wordleViz.targetPattern[i]];
