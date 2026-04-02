@@ -129,13 +129,105 @@ const VENT = {
   nearCol: 17, nearRow: 8,
 };
 
-const SAVE_SALT = "release-the-beast-2026";
+// === STATE-BASED SAVE CODE SYSTEM ===
+// Milestones are bits in a bitmask. Code table maps bitmask → code string.
+// For now codes are simple letters. Later: make them complex all at once here.
+const MILESTONES = { farmer: 1, wire: 2, anger: 4, beastViewed: 8 };
 
-async function generateSaveCode(station) {
-  const raw = await sha256(station.name + '-' + station.answerHash + '-' + SAVE_SALT);
-  const code = raw.substring(0, 8).toUpperCase();
-  return code.substring(0, 4) + '-' + code.substring(4, 8);
+const CODE_TABLE = {
+  1:  'A',  // farmer
+  3:  'B',  // farmer + wire
+  5:  'C',  // farmer + anger
+  7:  'D',  // farmer + wire + anger
+  11: 'E',  // farmer + wire + beastViewed
+  13: 'F',  // farmer + anger + beastViewed (shouldn't happen but cover it)
+  15: 'G',  // farmer + wire + anger + beastViewed
+};
+
+// Reverse lookup: code → bitmask
+const CODE_REVERSE = {};
+for (const [k, v] of Object.entries(CODE_TABLE)) CODE_REVERSE[v] = parseInt(k);
+
+function getStateBitmask() {
+  let bits = 0;
+  if (STATIONS[0].solved) bits |= MILESTONES.farmer;
+  if (WIRE.stage >= 5 && WIRE.stage !== 6) bits |= MILESTONES.wire;
+  if (wordleTeach.phase >= 3) bits |= MILESTONES.anger;
+  if (WIRE.stage >= 9) bits |= MILESTONES.beastViewed;
+  return bits;
 }
+
+function getStateCode() {
+  const bits = getStateBitmask();
+  return CODE_TABLE[bits] || null; // null if no code for this state (e.g. nothing solved)
+}
+
+function restoreFromStateCode(code) {
+  const c = code.trim().toUpperCase();
+  const bits = CODE_REVERSE[c];
+  if (bits === undefined) return false;
+  // Restore state from bitmask
+  if (bits & MILESTONES.farmer) {
+    STATIONS[0].solved = true;
+    STATIONS[0].correctAnswer = '3';
+  }
+  if (bits & MILESTONES.wire) {
+    WIRE.stage = (bits & MILESTONES.beastViewed) ? 9 : 7;
+    WIRE.animating = false;
+    MAP[3][2] = 4; MAP[3][3] = 4; MAP[3][4] = 4; MAP[3][5] = 4; // open beast doors
+    beastScene.showLaptop = true;
+    beastScene.laptopX = BEAST_CX;
+    beastScene.laptopY = BEAST_CY;
+  }
+  if (bits & MILESTONES.anger) {
+    wordleTeach.phase = 3;
+    wordleViz.available = true;
+    doorViewed = true;
+  }
+  if (bits & MILESTONES.beastViewed) {
+    WIRE.stage = 9;
+  }
+  return true;
+}
+
+// Code flash overlay
+let codeFlash = { active: false, code: '', timer: 0 };
+
+function flashCode(code) {
+  codeFlash.active = true;
+  codeFlash.code = code;
+  codeFlash.timer = 180; // ~3 seconds
+}
+
+function drawCodeFlash() {
+  if (!codeFlash.active) return;
+  codeFlash.timer--;
+  if (codeFlash.timer <= 0) { codeFlash.active = false; return; }
+
+  const alpha = codeFlash.timer > 30 ? 0.85 : codeFlash.timer / 30 * 0.85;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,' + alpha + ')';
+  const bw = 300, bh = 100;
+  const bx = (W - bw) / 2, by = 20;
+  ctx.fillRect(bx, by, bw, bh);
+  ctx.strokeStyle = '#b09030';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(bx, by, bw, bh);
+  ctx.textAlign = 'center';
+  ctx.font = '8px "Press Start 2P", monospace';
+  ctx.fillStyle = '#f1c40f';
+  ctx.fillText('PROGRESS SAVED', W / 2, by + 24);
+  ctx.font = '20px "Press Start 2P", monospace';
+  ctx.fillStyle = '#f1c40f';
+  ctx.fillText(codeFlash.code, W / 2, by + 56);
+  ctx.font = '8px "Press Start 2P", monospace';
+  ctx.fillStyle = '#b09030';
+  ctx.fillText('Write this down!', W / 2, by + 80);
+  ctx.restore();
+}
+
+// Track if N-Strokes has explained saves
+let nstrokesExplainedSaves = false;
 
 // Player state (pixel coords)
 const player = {
@@ -270,6 +362,9 @@ function resetGame() {
   WIRE.stage = 0;
   WIRE.animFrame = 0;
   WIRE.animLines = [];
+  WIRE.animating = false;
+  nstrokesExplainedSaves = false;
+  codeFlash.active = false;
   WIRE.animating = false;
   closePopup();
   paused = false;
@@ -638,6 +733,8 @@ function openBeastVent() {
     // Told to look again by N-Strokes → show image, advance
     WIRE.stage = 9;
     popup.open = true; popup.isImage = true;
+    // Flash code after image is closed
+    popup.pendingCodeFlash = true;
     return;
   }
   popup.open = true; popup.isWire = true; popup.answer = ''; popup.feedback = '';
@@ -703,6 +800,13 @@ function openVentPopup() {
   } else if (doorViewed && wordleTeach.phase < 3) {
     popup.ventPages = [
       { speaker: 'N-Strokes', text: '"Figure out the ANGER question yet? Go try the tiles near your door."' },
+    ];
+  } else if (!nstrokesExplainedSaves) {
+    popup.ventPages = [
+      { speaker: 'N-Strokes', text: '"Harry Bonds? Is that you?"' },
+      { speaker: 'N-Strokes', text: '"Listen. If you solve puzzles, the terminal on your wall will give you a code. Write it down."' },
+      { speaker: 'N-Strokes', text: '"If you ever lose your progress, that code will get you back to where you were. But you need to unlock the terminal first."' },
+      { speaker: 'N-Strokes', text: '"Solve the puzzle on your south wall. That activates the terminal. Then every time you do something important, check the terminal for your latest code."' },
     ];
   } else {
     popup.ventPages = [{ speaker: 'N-Strokes', text: '"Harry Bonds? Is that you?"' }];
@@ -780,6 +884,8 @@ function handleAngerAnswer(saidYes) {
     wordleTeach.phase = 3;
     wordleViz.available = true;
     wordleViz.mode = 'sandbox';
+    const code = getStateCode();
+    if (code) setTimeout(() => flashCode(code), 500);
     popup.isWordleViz = false; popup.isVent = true;
     popup.ventPages = [
       { speaker: 'N-Strokes', text: '"Yes! So you see \u2014 the answer is NOT ANGER. We just ruled a word out. Without knowing the guess. Just from the pattern."' },
@@ -893,7 +999,9 @@ function updateBeastScene() {
 function endBeastScene() {
   beastScene.active = false;
   beastScene.text = '';
-  WIRE.stage = 7; // beast left, haven't talked to N-Strokes yet
+  WIRE.stage = 7;
+  const code = getStateCode();
+  if (code) setTimeout(() => flashCode(code), 1000);
 }
 
 function drawLaptopSprite(x, y) {
@@ -929,7 +1037,9 @@ function closePopup() {
     if (WIRE.stage === 2) WIRE.stage = 4;
     if (WIRE.stage === 7) WIRE.stage = 8;
     if (wordleTeach.phase === 0 && doorViewed && popup.ventPages.length > 10) wordleTeach.phase = 1;
+    if (!nstrokesExplainedSaves && !STATIONS[0].solved && popup.ventPages) nstrokesExplainedSaves = true;
   }
+  const shouldFlash = popup.pendingCodeFlash;
   const shouldStir = popup.pendingStir;
   popup.open = false;
   popup.station = null;
@@ -946,17 +1056,22 @@ function closePopup() {
   popup.isImage = false;
   popup.isWordleViz = false;
   popup.isDoorMenu = false;
+  popup.pendingCodeFlash = false;
   if (shouldStir) {
     setTimeout(triggerBeastStir, 1500);
   }
+  if (shouldFlash) {
+    const code = getStateCode();
+    if (code) setTimeout(() => flashCode(code), 500);
+  }
 }
 
-async function openSolvedPopup(station) {
+function openSolvedPopup(station) {
   popup.open = true;
   popup.station = station;
   popup.solvedView = true;
   popup.answer = station.correctAnswer || '';
-  popup.saveCode = await generateSaveCode(station);
+  popup.saveCode = getStateCode() || '';
   popup.feedback = '';
   popup.feedbackColor = '#2ecc71';
   popup.isDoor = false;
@@ -975,9 +1090,11 @@ async function submitAnswer() {
     popup.station.correctAnswer = popup.answer.trim();
     popup.solvedView = true;
     popup.pendingStir = true;
-    popup.saveCode = await generateSaveCode(popup.station);
+    popup.saveCode = getStateCode() || '';
     popup.feedback = '';
     popup.feedbackColor = '#2ecc71';
+    const code = getStateCode();
+    if (code) setTimeout(() => flashCode(code), 500);
   } else {
     popup.station.attempts++;
     if (popup.station.attempts >= MAX_ATTEMPTS) {
@@ -994,29 +1111,17 @@ async function submitAnswer() {
   }
 }
 
-async function validateCode() {
+function validateCode() {
   const input = codeInput.trim().toUpperCase();
   if (!input) return;
-  for (const st of STATIONS) {
-    const expected = await generateSaveCode(st);
-    if (input === expected) {
-      if (st.solved) {
-        codeMessage = st.name + ' is already solved.';
-        codeMessageColor = '#6a6a7a';
-      } else {
-        st.solved = true;
-        st.locked = false;
-        st.correctAnswer = '';
-        codeMessage = st.name + ' restored!';
-        codeMessageColor = '#1a6a2a';
-        triggerBeastStir();
-      }
-      codeInput = '';
-      return;
-    }
+  if (restoreFromStateCode(input)) {
+    codeMessage = 'Progress restored!';
+    codeMessageColor = '#1a6a2a';
+    nstrokesExplainedSaves = true;
+  } else {
+    codeMessage = 'Code not recognized.';
+    codeMessageColor = '#8a2020';
   }
-  codeMessage = 'Code not recognized.';
-  codeMessageColor = '#8a2020';
   codeInput = '';
 }
 
@@ -2436,6 +2541,7 @@ function render() {
   drawPlayer();
   drawPopup();
   drawPauseMenu();
+  drawCodeFlash();
   drawVictory();
 }
 
