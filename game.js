@@ -1070,10 +1070,7 @@ function openSolvedPopup(station) {
   popup.open = true;
   popup.station = station;
   popup.solvedView = true;
-  popup.answer = station.correctAnswer || '';
   popup.saveCode = getStateCode() || '';
-  popup.feedback = '';
-  popup.feedbackColor = '#2ecc71';
   popup.isDoor = false;
 }
 
@@ -1469,9 +1466,8 @@ function drawProximityHint() {
     ctx.restore();
   }
 
-  // Stations
+  // Stations (prompt persists after solving — terminal)
   for (const st of STATIONS) {
-    if (st.solved) continue;
     if (Math.abs(pcol - st.nearCol) <= 1 && Math.abs(prow - st.nearRow) <= 1) {
       ctx.save();
       ctx.font = '10px "Press Start 2P", monospace';
@@ -1908,40 +1904,22 @@ function drawPopup() {
     }
 
   } else if (popup.solvedView) {
-    // ========= SOLVED VIEW =========
-    ctx.font = '12px "Press Start 2P", monospace';
-    ctx.fillStyle = POP.title;
-    ctx.fillText(st.name, W / 2, by + 34);
-
+    // ========= TERMINAL / CODE VIEW =========
     ctx.font = '10px "Press Start 2P", monospace';
-    ctx.fillStyle = POP.correct;
-    ctx.fillText('CORRECT!', W / 2, by + 62);
-
-    ctx.font = '14px "Press Start 2P", monospace';
-    ctx.fillStyle = POP.text;
-    ctx.fillText(popup.station.correctAnswer || '', W / 2, by + 88);
-
-    const codeY = by + 120;
-    const codeH = 80;
-    ctx.fillStyle = POP.codeBg;
-    ctx.fillRect(bx + 25, codeY, bw - 50, codeH);
-    ctx.strokeStyle = POP.codeBdr;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(bx + 25, codeY, bw - 50, codeH);
+    ctx.fillStyle = POP.title;
+    ctx.fillText('Terminal', W / 2, by + 34);
 
     ctx.font = '8px "Press Start 2P", monospace';
     ctx.fillStyle = POP.flavor;
-    ctx.fillText('N-Strokes whispers:', W / 2, codeY + 18);
-    ctx.fillStyle = POP.text;
-    ctx.fillText('"Remember this, Harry Bonds."', W / 2, codeY + 34);
+    ctx.fillText('Your current save code:', W / 2, by + 64);
 
-    ctx.font = '16px "Press Start 2P", monospace';
+    ctx.font = '24px "Press Start 2P", monospace';
     ctx.fillStyle = POP.code;
-    ctx.fillText(popup.saveCode, W / 2, codeY + 58);
+    ctx.fillText(popup.saveCode || '---', W / 2, by + 100);
 
     ctx.font = '8px "Press Start 2P", monospace';
-    ctx.fillStyle = POP.hint;
-    ctx.fillText('Write this down.', W / 2, codeY + 74);
+    ctx.fillStyle = POP.text;
+    ctx.fillText('Write this down.', W / 2, by + 130);
 
     ctx.fillStyle = POP.hint;
     ctx.fillText('[SPACE] to close', W / 2, by + bh - 16);
