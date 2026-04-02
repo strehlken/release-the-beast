@@ -2104,45 +2104,56 @@ function drawWireContactPoints() {
 }
 
 function drawBeastCellDarkness() {
-  // Collect active light positions
   const lights = [];
   for (const st of STATIONS) {
     if (st.solved) lights.push({ x: LIGHT_X, y: st.lightRow * TILE + TILE / 2 });
   }
   if (WIRE.stage >= 5 && WIRE.stage !== 6) lights.push({ x: LIGHT_X, y: WIRE.lightRow * TILE + TILE / 2 });
 
-  // Draw darkness over beast cell area using a temporary canvas approach:
-  // Fill the beast cell with near-black, then use radial gradients to "erase" near lights
-  ctx.save();
-
-  // Clip to beast cell interior below doors (cols 1-6, rows 4-11)
   const darkTop = 4 * TILE;
+  const darkH = BEAST_BOTTOM - darkTop;
+  const darkW = BEAST_RIGHT - BEAST_LEFT;
+
+  ctx.save();
   ctx.beginPath();
-  ctx.rect(BEAST_LEFT, darkTop, BEAST_RIGHT - BEAST_LEFT, BEAST_BOTTOM - darkTop);
+  ctx.rect(BEAST_LEFT, darkTop, darkW, darkH);
   ctx.clip();
 
   if (lights.length === 0) {
-    // No lights: fully dark
     ctx.fillStyle = '#050510';
-    ctx.fillRect(BEAST_LEFT, darkTop, BEAST_RIGHT - BEAST_LEFT, BEAST_BOTTOM - darkTop);
+    ctx.fillRect(BEAST_LEFT, darkTop, darkW, darkH);
   } else {
-    // Dark base
-    ctx.fillStyle = 'rgba(5, 5, 16, 0.92)';
-    ctx.fillRect(BEAST_LEFT, darkTop, BEAST_RIGHT - BEAST_LEFT, BEAST_BOTTOM - darkTop);
+    // Use an offscreen canvas to build the darkness mask
+    if (!drawBeastCellDarkness._off) {
+      drawBeastCellDarkness._off = document.createElement('canvas');
+    }
+    const off = drawBeastCellDarkness._off;
+    off.width = darkW;
+    off.height = darkH;
+    const oc = off.getContext('2d');
 
-    // Cut light holes using destination-out compositing
-    ctx.globalCompositeOperation = 'destination-out';
+    // Fill with near-black
+    oc.fillStyle = 'rgba(5, 5, 16, 0.93)';
+    oc.fillRect(0, 0, darkW, darkH);
+
+    // Punch holes near each light
+    oc.globalCompositeOperation = 'destination-out';
     for (const l of lights) {
+      const lx = l.x - BEAST_LEFT;
+      const ly = l.y - darkTop;
       const r = TILE * 3.5;
-      const grad = ctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, r);
-      grad.addColorStop(0, 'rgba(0,0,0,0.95)');
-      grad.addColorStop(0.3, 'rgba(0,0,0,0.7)');
+      const grad = oc.createRadialGradient(lx, ly, 0, lx, ly, r);
+      grad.addColorStop(0, 'rgba(0,0,0,1)');
+      grad.addColorStop(0.3, 'rgba(0,0,0,0.8)');
       grad.addColorStop(0.6, 'rgba(0,0,0,0.3)');
       grad.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(l.x - r, l.y - r, r * 2, r * 2);
+      oc.fillStyle = grad;
+      oc.fillRect(lx - r, ly - r, r * 2, r * 2);
     }
-    ctx.globalCompositeOperation = 'source-over';
+    oc.globalCompositeOperation = 'source-over';
+
+    // Draw the mask onto the main canvas
+    ctx.drawImage(off, BEAST_LEFT, darkTop);
   }
 
   ctx.restore();
