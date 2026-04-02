@@ -363,42 +363,30 @@ function drawPauseMenu() {
   ctx.fillStyle = '#1a1a2a';
   ctx.fillText('PAUSED', W / 2, by + 30);
 
-  const btnW = 160, btnH = 28;
+  const btnW = 160, btnH = 30;
   const rx = (W - btnW) / 2;
-
-  // Resume
-  const ry = by + 55;
-  ctx.fillStyle = '#3a5a3a';
-  ctx.fillRect(rx, ry, btnW, btnH);
-  ctx.strokeStyle = '#2a4a2a';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(rx, ry, btnW, btnH);
-  ctx.font = '10px "Press Start 2P", monospace';
-  ctx.fillStyle = '#d0e0d0';
-  ctx.fillText('RESUME', W / 2, ry + 19);
-  resumeBtn = { x: rx, y: ry, w: btnW, h: btnH };
-
-  // Insert Codes
-  const cy = by + 100;
-  ctx.fillStyle = '#3a4a5a';
-  ctx.fillRect(rx, cy, btnW, btnH);
-  ctx.strokeStyle = '#2a3a4a';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(rx, cy, btnW, btnH);
-  ctx.fillStyle = '#d0d8e0';
-  ctx.fillText('INSERT CODES', W / 2, cy + 19);
-  codesBtn = { x: rx, y: cy, w: btnW, h: btnH };
-
-  // Restart
-  const rry = by + 145;
-  ctx.fillStyle = '#6a2a2a';
-  ctx.fillRect(rx, rry, btnW, btnH);
-  ctx.strokeStyle = '#4a1a1a';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(rx, rry, btnW, btnH);
-  ctx.fillStyle = '#e0c0c0';
-  ctx.fillText('RESTART', W / 2, rry + 19);
-  restartBtn = { x: rx, y: rry, w: btnW, h: btnH };
+  const pauseOpts = [
+    { label: 'RESUME', bg: '#3a5a3a', bgSel: '#4a7a4a' },
+    { label: 'INSERT CODES', bg: '#3a4a5a', bgSel: '#4a6a8a' },
+    { label: 'RESTART', bg: '#6a2a2a', bgSel: '#8a4a4a' },
+  ];
+  const pauseBtns = [];
+  for (let i = 0; i < pauseOpts.length; i++) {
+    const o = pauseOpts[i];
+    const oy = by + 50 + i * 42;
+    const sel = menuSel === i;
+    ctx.fillStyle = sel ? o.bgSel : o.bg;
+    ctx.fillRect(rx, oy, btnW, btnH);
+    ctx.strokeStyle = sel ? '#fff' : '#2a2a2a'; ctx.lineWidth = 2;
+    ctx.strokeRect(rx, oy, btnW, btnH);
+    ctx.font = '10px "Press Start 2P", monospace';
+    ctx.fillStyle = sel ? '#fff' : '#c0c8d0';
+    ctx.fillText(o.label, W / 2, oy + 20);
+    pauseBtns.push({ x: rx, y: oy, w: btnW, h: btnH });
+  }
+  resumeBtn = pauseBtns[0];
+  codesBtn = pauseBtns[1];
+  restartBtn = pauseBtns[2];
 
   ctx.restore();
 }
@@ -407,6 +395,18 @@ function drawPauseMenu() {
 const keys = {};
 window.addEventListener('keydown', e => {
   keys[e.key] = true;
+
+  // Pause menu navigation
+  if (paused && !codesScreen) {
+    if (e.key === 'ArrowUp' || e.key === 'w') { menuSel = Math.max(0, menuSel - 1); return; }
+    if (e.key === 'ArrowDown' || e.key === 's') { menuSel = Math.min(2, menuSel + 1); return; }
+    if (e.key === 'Enter' || e.key === ' ') {
+      if (menuSel === 0) { paused = false; }
+      else if (menuSel === 1) { codesScreen = true; codeInput = ''; codeMessage = ''; }
+      else if (menuSel === 2) { resetGame(); }
+      return;
+    }
+  }
 
   // Codes screen input
   if (codesScreen) {
@@ -501,6 +501,7 @@ window.addEventListener('keydown', e => {
     if (popup.open) { closePopup(); return; }
     if (codesScreen) { codesScreen = false; return; }
     paused = !paused;
+    if (paused) menuSel = 0;
     return;
   }
 
