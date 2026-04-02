@@ -169,6 +169,10 @@ const popup = {
 let paused = false;
 let victoryScreen = false;
 
+// Generic menu selection (used by door menu, pause, etc.)
+let menuSel = 0; // currently highlighted option index
+let menuBtns = []; // [{x,y,w,h}] — set during render for click detection
+
 // Beast escape cutscene
 const beastScene = {
   active: false,
@@ -433,7 +437,7 @@ window.addEventListener('keydown', e => {
     }
     if (popup.open && popup.isImage) { closePopup(); return; }
     if (popup.open && popup.isWordleViz) return;
-    if (popup.open && popup.isDoorMenu) { closePopup(); return; }
+    if (popup.open && popup.isDoorMenu) return; // space does nothing, use arrows+enter
     if (popup.open && (popup.solvedView || popup.isLocked)) { closePopup(); return; }
     if (popup.open && popup.isVent) {
       if (popup.ventPage < popup.ventPages.length - 1) { popup.ventPage++; return; }
@@ -496,10 +500,14 @@ window.addEventListener('keydown', e => {
     return;
   }
 
-  // Door menu selection
+  // Door menu selection (arrow keys + enter)
   if (popup.open && popup.isDoorMenu) {
-    if (e.key === '1') { closePopup(); openDoorPopup(); }
-    if (e.key === '2') { closePopup(); openWordleViz(); }
+    if (e.key === 'ArrowUp' || e.key === 'w') { menuSel = Math.max(0, menuSel - 1); }
+    if (e.key === 'ArrowDown' || e.key === 's') { menuSel = Math.min(1, menuSel + 1); }
+    if (e.key === 'Enter') {
+      if (menuSel === 0) { closePopup(); openDoorPopup(); }
+      if (menuSel === 1) { closePopup(); openWordleViz(); }
+    }
     return;
   }
 
@@ -521,16 +529,13 @@ window.addEventListener('keydown', e => {
       if (e.key === 'Backspace') {
         wordleViz.guess = wordleViz.guess.slice(0, -1);
       } else if (e.key === 'Enter' && wordleViz.guess.length === 5) {
-        wordleViz.guess = ''; // clear guess to try another
-      } else if (e.key === '1' && wordleViz.mode === 'test') {
-        handleAngerAnswer(true);
-      } else if (e.key === '2' && wordleViz.mode === 'test') {
-        handleAngerAnswer(false);
-      } else if (e.key === '3' && wordleViz.mode === 'sandbox') {
-        // Change solution word
-        wordleViz.settingAnswer = true;
-        wordleViz.answerInput = '';
         wordleViz.guess = '';
+      } else if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && wordleViz.mode === 'test') {
+        menuSel = menuSel === 0 ? 1 : 0;
+      } else if (e.key === 'Enter' && wordleViz.guess.length < 5 && wordleViz.mode === 'test') {
+        handleAngerAnswer(menuSel === 0);
+      } else if (e.key === 'Enter' && wordleViz.guess.length < 5 && wordleViz.mode === 'sandbox') {
+        wordleViz.settingAnswer = true; wordleViz.answerInput = ''; wordleViz.guess = '';
       } else if (/^[a-zA-Z]$/.test(e.key) && wordleViz.guess.length < 5) {
         wordleViz.guess += e.key.toUpperCase();
       }
@@ -743,6 +748,8 @@ function openWordleViz() {
 function openDoorMenu() {
   popup.open = true;
   popup.isDoorMenu = true;
+  menuSel = 0;
+  menuBtns = [];
 }
 
 function handleAngerAnswer(saidYes) {
@@ -1037,28 +1044,39 @@ window.addEventListener('resize', fitCanvas);
 
 // Pause menu click handler
 canvas.addEventListener('click', e => {
-  if (!paused) return;
-  if (codesScreen) return; // codes screen uses keyboard only
   const rect = canvas.getBoundingClientRect();
   const scaleX = W / rect.width;
   const scaleY = H / rect.height;
   const mx = (e.clientX - rect.left) * scaleX;
   const my = (e.clientY - rect.top) * scaleY;
 
-  if (mx >= resumeBtn.x && mx <= resumeBtn.x + resumeBtn.w &&
-      my >= resumeBtn.y && my <= resumeBtn.y + resumeBtn.h) {
-    paused = false;
+  function hitBtn(b) { return mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h; }
+
+  // Door menu or Wordle visualizer buttons
+  if (popup.open && (popup.isDoorMenu || popup.isWordleViz)) {
+    for (let i = 0; i < menuBtns.length; i++) {
+      if (hitBtn(menuBtns[i])) {
+        menuSel = i;
+        if (popup.isDoorMenu) {
+          if (i === 0) { closePopup(); openDoorPopup(); }
+          if (i === 1) { closePopup(); openWordleViz(); }
+        } else if (popup.isWordleViz && wordleViz.mode === 'test') {
+          handleAngerAnswer(i === 0);
+        } else if (popup.isWordleViz && wordleViz.mode === 'sandbox') {
+          wordleViz.settingAnswer = true; wordleViz.answerInput = ''; wordleViz.guess = '';
+        }
+        return;
+      }
+    }
+    return;
   }
-  if (mx >= codesBtn.x && mx <= codesBtn.x + codesBtn.w &&
-      my >= codesBtn.y && my <= codesBtn.y + codesBtn.h) {
-    codesScreen = true;
-    codeInput = '';
-    codeMessage = '';
-  }
-  if (mx >= restartBtn.x && mx <= restartBtn.x + restartBtn.w &&
-      my >= restartBtn.y && my <= restartBtn.y + restartBtn.h) {
-    resetGame();
-  }
+
+  // Pause menu
+  if (!paused) return;
+  if (codesScreen) return;
+  if (hitBtn(resumeBtn)) { paused = false; }
+  if (hitBtn(codesBtn)) { codesScreen = true; codeInput = ''; codeMessage = ''; }
+  if (hitBtn(restartBtn)) { resetGame(); }
 });
 
 // Collision: only floor tiles (0) are walkable
@@ -1376,7 +1394,7 @@ const POP = {
 
 function drawPopup() {
   if (!popup.open) return;
-  if (!popup.station && !popup.isVent && !popup.isLocked && !popup.isWire && !popup.isImage && !popup.isWordleViz) return;
+  if (!popup.station && !popup.isVent && !popup.isLocked && !popup.isWire && !popup.isImage && !popup.isWordleViz && !popup.isDoorMenu) return;
 
   // Full-screen image view
   if (popup.isImage) {
@@ -1404,7 +1422,7 @@ function drawPopup() {
   if (popup.isDoorMenu) {
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
     ctx.fillRect(0, 0, W, H);
-    const mw = 280, mh = 140;
+    const mw = 280, mh = 150;
     const mx = (W - mw) / 2, my = (H - mh) / 2;
     ctx.fillStyle = '#c8c8d0';
     ctx.fillRect(mx, my, mw, mh);
@@ -1414,20 +1432,25 @@ function drawPopup() {
     ctx.font = '10px "Press Start 2P", monospace';
     ctx.fillStyle = '#1a1a2a';
     ctx.fillText('The Master Door', W / 2, my + 28);
-    const btnW = 220, btnH = 28, bx = (W - btnW) / 2;
-    ctx.fillStyle = '#3a4a5a';
-    ctx.fillRect(bx, my + 48, btnW, btnH);
-    ctx.strokeStyle = '#2a3a4a'; ctx.lineWidth = 2;
-    ctx.strokeRect(bx, my + 48, btnW, btnH);
-    ctx.font = '9px "Press Start 2P", monospace';
-    ctx.fillStyle = '#d0d8e0';
-    ctx.fillText('[1] Master Puzzle', W / 2, my + 48 + 19);
-    ctx.fillStyle = '#4a5a3a';
-    ctx.fillRect(bx, my + 90, btnW, btnH);
-    ctx.strokeStyle = '#3a4a2a'; ctx.lineWidth = 2;
-    ctx.strokeRect(bx, my + 90, btnW, btnH);
-    ctx.fillStyle = '#d8e0d0';
-    ctx.fillText('[2] Wordle Visualizer', W / 2, my + 90 + 19);
+    const btnW = 220, btnH = 30;
+    const bx = (W - btnW) / 2;
+    const opts = ['Master Puzzle', 'Wordle Visualizer'];
+    menuBtns = [];
+    for (let i = 0; i < opts.length; i++) {
+      const by = my + 50 + i * 40;
+      const sel = menuSel === i;
+      ctx.fillStyle = sel ? '#4a6a8a' : '#3a4a5a';
+      ctx.fillRect(bx, by, btnW, btnH);
+      ctx.strokeStyle = sel ? '#6a9aca' : '#2a3a4a'; ctx.lineWidth = 2;
+      ctx.strokeRect(bx, by, btnW, btnH);
+      ctx.font = '9px "Press Start 2P", monospace';
+      ctx.fillStyle = sel ? '#fff' : '#c0c8d0';
+      ctx.fillText(opts[i], W / 2, by + 20);
+      menuBtns.push({ x: bx, y: by, w: btnW, h: btnH });
+    }
+    ctx.font = '8px "Press Start 2P", monospace';
+    ctx.fillStyle = '#7a7a8a';
+    ctx.fillText('ESC to close', W / 2, my + mh - 12);
     ctx.restore();
     return;
   }
@@ -1517,34 +1540,37 @@ function drawPopup() {
       ctx.fillText('Type a 5-letter guess. Backspace to clear.', W / 2, gy + tileS + 24);
     }
 
+    menuBtns = [];
     if (wordleViz.mode === 'test') {
       ctx.font = '9px "Press Start 2P", monospace';
       const btnY = gy + tileS + 50;
-      ctx.fillStyle = '#3a5a3a';
-      ctx.fillRect(W / 2 - 170, btnY, 155, 30);
-      ctx.strokeStyle = '#2a4a2a'; ctx.lineWidth = 2;
-      ctx.strokeRect(W / 2 - 170, btnY, 155, 30);
-      ctx.fillStyle = '#d0e0d0';
-      ctx.fillText('[1] Yes, possible', W / 2 - 92, btnY + 20);
-      ctx.fillStyle = '#5a3a3a';
-      ctx.fillRect(W / 2 + 15, btnY, 155, 30);
-      ctx.strokeStyle = '#4a2a2a'; ctx.lineWidth = 2;
-      ctx.strokeRect(W / 2 + 15, btnY, 155, 30);
-      ctx.fillStyle = '#e0d0d0';
-      ctx.fillText('[2] No, impossible', W / 2 + 92, btnY + 20);
+      const testOpts = ['Yes, possible', 'No, impossible'];
+      const testColors = [['#3a5a3a','#5a8a5a'],['#5a3a3a','#8a5a5a']];
+      for (let i = 0; i < 2; i++) {
+        const bx = i === 0 ? W / 2 - 170 : W / 2 + 15;
+        const sel = menuSel === i;
+        ctx.fillStyle = sel ? testColors[i][1] : testColors[i][0];
+        ctx.fillRect(bx, btnY, 155, 30);
+        ctx.strokeStyle = sel ? '#fff' : '#2a2a2a'; ctx.lineWidth = 2;
+        ctx.strokeRect(bx, btnY, 155, 30);
+        ctx.fillStyle = sel ? '#fff' : '#c0c0c0';
+        ctx.fillText(testOpts[i], bx + 77, btnY + 20);
+        menuBtns.push({ x: bx, y: btnY, w: 155, h: 30 });
+      }
       ctx.font = '8px "Press Start 2P", monospace';
       ctx.fillStyle = '#5a5a6a';
       ctx.fillText('Can a real word make this exact pattern?', W / 2, btnY + 52);
     } else {
-      // Sandbox: change solution button
       ctx.font = '9px "Press Start 2P", monospace';
       const btnY = gy + tileS + 50;
+      const bx = W / 2 - 110, bw = 220;
       ctx.fillStyle = '#3a4a5a';
-      ctx.fillRect(W / 2 - 100, btnY, 200, 28);
-      ctx.strokeStyle = '#2a3a4a'; ctx.lineWidth = 2;
-      ctx.strokeRect(W / 2 - 100, btnY, 200, 28);
+      ctx.fillRect(bx, btnY, bw, 28);
+      ctx.strokeStyle = '#5a6a7a'; ctx.lineWidth = 2;
+      ctx.strokeRect(bx, btnY, bw, 28);
       ctx.fillStyle = '#d0d8e0';
-      ctx.fillText('[3] Change solution', W / 2, btnY + 19);
+      ctx.fillText('Change solution', W / 2, btnY + 19);
+      menuBtns.push({ x: bx, y: btnY, w: bw, h: 28 });
     }
 
     ctx.font = '8px "Press Start 2P", monospace';
