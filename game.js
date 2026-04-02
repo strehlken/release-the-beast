@@ -2145,7 +2145,8 @@ function drawLightBeams() {
 }
 
 function drawBeast() {
-  // Don't draw if beast has escaped and cutscene is over
+  // Don't draw if beast has escaped
+  if (WIRE.stage >= 7) return;
   if (WIRE.stage === 5 && !beastScene.active) return;
 
   // During cutscene, draw without clipping (beast is moving freely)
