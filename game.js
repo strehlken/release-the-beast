@@ -2115,19 +2115,20 @@ function drawBeastCellDarkness() {
   // Fill the beast cell with near-black, then use radial gradients to "erase" near lights
   ctx.save();
 
-  // Clip to beast cell interior (cols 1-6, rows 4-11 roughly, but include row 3 for door area)
+  // Clip to beast cell interior below doors (cols 1-6, rows 4-11)
+  const darkTop = 4 * TILE;
   ctx.beginPath();
-  ctx.rect(BEAST_LEFT, BEAST_TOP, BEAST_RIGHT - BEAST_LEFT, BEAST_BOTTOM - BEAST_TOP);
+  ctx.rect(BEAST_LEFT, darkTop, BEAST_RIGHT - BEAST_LEFT, BEAST_BOTTOM - darkTop);
   ctx.clip();
 
   if (lights.length === 0) {
     // No lights: fully dark
     ctx.fillStyle = '#050510';
-    ctx.fillRect(BEAST_LEFT, BEAST_TOP, BEAST_RIGHT - BEAST_LEFT, BEAST_BOTTOM - BEAST_TOP);
+    ctx.fillRect(BEAST_LEFT, darkTop, BEAST_RIGHT - BEAST_LEFT, BEAST_BOTTOM - darkTop);
   } else {
     // Dark base
     ctx.fillStyle = 'rgba(5, 5, 16, 0.92)';
-    ctx.fillRect(BEAST_LEFT, BEAST_TOP, BEAST_RIGHT - BEAST_LEFT, BEAST_BOTTOM - BEAST_TOP);
+    ctx.fillRect(BEAST_LEFT, darkTop, BEAST_RIGHT - BEAST_LEFT, BEAST_BOTTOM - darkTop);
 
     // Cut light holes using destination-out compositing
     ctx.globalCompositeOperation = 'destination-out';
