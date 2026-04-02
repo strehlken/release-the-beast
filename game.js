@@ -535,9 +535,9 @@ window.addEventListener('keydown', e => {
         wordleViz.guess = wordleViz.guess.slice(0, -1);
       } else if (e.key === 'Enter' && wordleViz.guess.length === 5) {
         wordleViz.guess = '';
-      } else if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && wordleViz.mode === 'test') {
+      } else if ((e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') && wordleViz.mode === 'test') {
         menuSel = menuSel === 0 ? 1 : 0;
-      } else if (e.key === 'Enter' && wordleViz.guess.length < 5 && wordleViz.mode === 'test') {
+      } else if ((e.key === 'Enter' || e.key === ' ') && wordleViz.mode === 'test') {
         handleAngerAnswer(menuSel === 0);
       } else if (e.key === 'Enter' && wordleViz.guess.length < 5 && wordleViz.mode === 'sandbox') {
         wordleViz.settingAnswer = true; wordleViz.answerInput = ''; wordleViz.guess = '';
@@ -734,6 +734,7 @@ function openWordleViz() {
   popup.open = true;
   popup.isWordleViz = true;
   wordleViz.guess = '';
+  menuSel = 0;
   if (wordleTeach.phase < 3) {
     wordleViz.mode = 'test';
     wordleViz.answer = 'ANGER';
