@@ -104,6 +104,22 @@ const PUZZLE_DOOR = {
   wordleAttempts: 0,
 };
 let doorPage = 0; // 0 = Navier-Stokes, 1 = Wordle puzzle
+let doorViewed = false; // has player seen the Wordle page of the master door
+
+// Wordle teaching system
+const wordleTeach = {
+  phase: 0,    // 0=not started, 1=dialogue done awaiting test, 2=test active, 3=completed
+  angerTries: 0,
+};
+
+// Wordle visualizer state
+const wordleViz = {
+  answer: 'ANGER',
+  guess: '',
+  targetPattern: ['G','G','Y','Y','Y'],
+  mode: 'test',   // 'test' = ANGER test, 'sandbox' = free play
+  available: false, // unlocked after completing ANGER test
+};
 
 // Vent between Harry Bonds' cell and N-Strokes' cell
 const VENT = {
@@ -143,6 +159,7 @@ const popup = {
   isLocked: false, // true when showing locked-out message
   isWire: false,   // true when wire puzzle is active
   isImage: false,  // true when showing full-screen image
+  isWordleViz: false, // true when Wordle visualizer is open
 };
 
 // Pause menu
@@ -232,6 +249,10 @@ function resetGame() {
   PUZZLE_DOOR.wordleLocked = false;
   PUZZLE_DOOR.wordleAttempts = 0;
   doorPage = 0;
+  doorViewed = false;
+  wordleTeach.phase = 0;
+  wordleTeach.angerTries = 0;
+  wordleViz.available = false;
   MAP[3][12] = 7; // restore door tiles
   MAP[3][13] = 7;
   MAP[3][2] = 6; MAP[3][3] = 6; MAP[3][4] = 6; MAP[3][5] = 6; // restore beast door
@@ -403,11 +424,12 @@ window.addEventListener('keydown', e => {
     e.preventDefault();
     if (paused || victoryScreen) return;
     if (popup.open && popup.isDoor) {
-      if (doorPage === 0) { doorPage = 1; popup.answer = ''; popup.feedback = ''; return; }
+      if (doorPage === 0) { doorPage = 1; doorViewed = true; popup.answer = ''; popup.feedback = ''; return; }
       if (PUZZLE_DOOR.wordleSolved || PUZZLE_DOOR.wordleLocked) { closePopup(); return; }
       return; // on page 1 unsolved, space does nothing (use Enter)
     }
     if (popup.open && popup.isImage) { closePopup(); return; }
+    if (popup.open && popup.isWordleViz) return; // space does nothing in visualizer
     if (popup.open && (popup.solvedView || popup.isLocked)) { closePopup(); return; }
     if (popup.open && popup.isVent) {
       if (popup.ventPage < popup.ventPages.length - 1) { popup.ventPage++; return; }
@@ -422,6 +444,12 @@ window.addEventListener('keydown', e => {
     // Check exit (far right of corridor)
     if (pcol >= 20 && (prow === 1 || prow === 2)) {
       showVictory();
+      return;
+    }
+
+    // Check Wordle visualizer (col 11, row 4 — left of master door)
+    if (wordleTeach.phase >= 1 && pcol === 11 && prow === 4) {
+      openWordleViz();
       return;
     }
 
@@ -463,6 +491,25 @@ window.addEventListener('keydown', e => {
     if (popup.open) { closePopup(); return; }
     if (codesScreen) { codesScreen = false; return; }
     paused = !paused;
+    return;
+  }
+
+  // Wordle visualizer typing
+  if (popup.open && popup.isWordleViz) {
+    if (e.key === 'Backspace') {
+      wordleViz.guess = wordleViz.guess.slice(0, -1);
+    } else if (e.key === 'Enter' && wordleViz.guess.length === 5) {
+      // In sandbox mode with no answer set, ignore
+      // In test mode, just let them see the pattern (buttons handle answer)
+    } else if (e.key === '1' && wordleViz.mode === 'test') {
+      // "Yes, it's possible"
+      handleAngerAnswer(true);
+    } else if (e.key === '2' && wordleViz.mode === 'test') {
+      // "No, it's impossible"
+      handleAngerAnswer(false);
+    } else if (/^[a-zA-Z]$/.test(e.key) && wordleViz.guess.length < 5) {
+      wordleViz.guess += e.key.toUpperCase();
+    }
     return;
   }
 
@@ -572,6 +619,7 @@ function openBeastVent() {
 
 function openVentPopup() {
   popup.open = true; popup.station = null; popup.isVent = true;
+  // Priority dialogues based on wire quest stage
   if (WIRE.stage === 2) {
     popup.ventPages = [
       { speaker: 'N-Strokes', text: '"Harry Bonds? Is that you?"' },
@@ -593,10 +641,106 @@ function openVentPopup() {
       { speaker: 'Harry Bonds', text: '"No, you don\'t get it. He just left."' },
       { speaker: 'N-Strokes', text: '"Not the big oaf that wandered out \u2014 the BEAST! Go look again."' },
     ];
+  } else if (doorViewed && wordleTeach.phase === 0) {
+    // Wordle teaching Phase 1-2: explaining patterns
+    popup.ventPages = [
+      { speaker: 'Harry Bonds', text: '"There are colored squares on my door. Two rows. Green, yellow, grey, green, yellow on one. Green, green, yellow, yellow, yellow on the other."' },
+      { speaker: 'N-Strokes', text: '"Colored squares? Like... a pattern grid?"' },
+      { speaker: 'Harry Bonds', text: '"Yeah. Five squares per row. Some green, some yellow, some grey."' },
+      { speaker: 'N-Strokes', text: '"I know what those are. The Puzzlemaster does a word game every morning. Five-letter words. I can hear him muttering through the walls."' },
+      { speaker: 'N-Strokes', text: '"Green means a letter in someone\'s guess matched the answer \u2014 right letter, right spot. Yellow means the letter IS in the answer but in the wrong spot. Grey means that letter isn\'t in the word at all."' },
+      { speaker: 'N-Strokes', text: '"It\'s like when someone shares their results. You see the colors but not the letters."' },
+      { speaker: 'Harry Bonds', text: '"But if I can\'t see the guesses, how can I figure out the answer? You need to know what they guessed!"' },
+      { speaker: 'N-Strokes', text: '"No. You don\'t."' },
+      { speaker: 'Harry Bonds', text: '"What? How?"' },
+      { speaker: 'N-Strokes', text: '"Tell me the first pattern again."' },
+      { speaker: 'Harry Bonds', text: '"Green, green, yellow, yellow, yellow."' },
+      { speaker: 'N-Strokes', text: '"OK. Think about what that means. The first two letters of someone\'s guess matched the answer exactly. The last three letters are ALL in the answer \u2014 but they\'re ALL in the wrong spots."' },
+      { speaker: 'N-Strokes', text: '"Let me ask you something. Could the answer be ANGER?"' },
+      { speaker: 'Harry Bonds', text: '"How am I supposed to know?"' },
+      { speaker: 'N-Strokes', text: '"Try it. If the answer were ANGER, could someone make a guess that produces green, green, yellow, yellow, yellow? I\'ll let you work it out."' },
+    ];
+  } else if (wordleTeach.phase === 1) {
+    // After dialogue, before test completed — remind to test
+    popup.ventPages = [
+      { speaker: 'N-Strokes', text: '"Try the tiles near your door. See if ANGER can produce that pattern."' },
+    ];
+  } else if (doorViewed && wordleTeach.phase < 3) {
+    popup.ventPages = [
+      { speaker: 'N-Strokes', text: '"Figure out the ANGER question yet? Go try the tiles near your door."' },
+    ];
   } else {
     popup.ventPages = [{ speaker: 'N-Strokes', text: '"Harry Bonds? Is that you?"' }];
   }
   popup.ventPage = 0;
+}
+
+// Wordle pattern computation
+function computeWordlePattern(answer, guess) {
+  const a = answer.toUpperCase().split('');
+  const g = guess.toUpperCase().split('');
+  const pattern = ['X','X','X','X','X'];
+  const used = [false,false,false,false,false];
+  // Green pass
+  for (let i = 0; i < 5; i++) {
+    if (g[i] === a[i]) { pattern[i] = 'G'; used[i] = true; }
+  }
+  // Yellow pass
+  for (let i = 0; i < 5; i++) {
+    if (pattern[i] === 'G') continue;
+    for (let j = 0; j < 5; j++) {
+      if (!used[j] && g[i] === a[j]) { pattern[i] = 'Y'; used[j] = true; break; }
+    }
+  }
+  return pattern;
+}
+
+function openWordleViz() {
+  popup.open = true;
+  popup.isWordleViz = true;
+  wordleViz.guess = '';
+  if (wordleTeach.phase < 3) {
+    wordleViz.mode = 'test';
+    wordleViz.answer = 'ANGER';
+    wordleViz.targetPattern = ['G','G','Y','Y','Y'];
+  } else {
+    wordleViz.mode = 'sandbox';
+    wordleViz.answer = '';
+  }
+}
+
+function handleAngerAnswer(saidYes) {
+  if (saidYes) {
+    // Wrong — player thinks it's possible
+    wordleTeach.angerTries++;
+    if (wordleTeach.angerTries >= 2) {
+      popup.isWordleViz = false; popup.isVent = true;
+      popup.ventPages = [
+        { speaker: 'N-Strokes', text: '"Maybe the Puzzlemaster has something to teach you after all..."' },
+      ];
+      popup.ventPage = 0;
+    } else {
+      popup.isWordleViz = false; popup.isVent = true;
+      popup.ventPages = [
+        { speaker: 'N-Strokes', text: '"Hmm. Are you sure? Try again. Remember \u2014 you need a REAL five-letter word that makes exactly that pattern."' },
+      ];
+      popup.ventPage = 0;
+    }
+  } else {
+    // Correct — "No, it's impossible"
+    wordleTeach.phase = 3;
+    wordleViz.available = true;
+    wordleViz.mode = 'sandbox';
+    popup.isWordleViz = false; popup.isVent = true;
+    popup.ventPages = [
+      { speaker: 'N-Strokes', text: '"Yes! So you see \u2014 the answer is NOT ANGER. We just ruled a word out. Without knowing the guess. Just from the pattern."' },
+      { speaker: 'N-Strokes', text: '"Patterns let us rule words out. Any word that can\'t produce a pattern with ANY real guess... it\'s eliminated."' },
+      { speaker: 'N-Strokes', text: '"I don\'t think there are too many five-letter words that can survive that first pattern. And even fewer that survive both. Maybe even... just one."' },
+      { speaker: 'N-Strokes', text: '"But checking all of them by hand? That\'s a lot of words, Harry Bonds. That\'s a lot of checking."' },
+      { speaker: 'N-Strokes', text: '"Unless you had something that could check them all for you. Very fast."' },
+    ];
+    popup.ventPage = 0;
+  }
 }
 
 function openLockedPopup(station) {
@@ -735,6 +879,7 @@ function closePopup() {
   if (popup.isVent && popup.ventPages && popup.ventPage >= popup.ventPages.length - 1) {
     if (WIRE.stage === 2) WIRE.stage = 4;
     if (WIRE.stage === 7) WIRE.stage = 8;
+    if (wordleTeach.phase === 0 && popup.ventPages.length > 5) wordleTeach.phase = 1;
   }
   const shouldStir = popup.pendingStir;
   popup.open = false;
@@ -750,6 +895,7 @@ function closePopup() {
   popup.isLocked = false;
   popup.isWire = false;
   popup.isImage = false;
+  popup.isWordleViz = false;
   if (shouldStir) {
     setTimeout(triggerBeastStir, 1500);
   }
@@ -1127,6 +1273,16 @@ function drawProximityHint() {
     ctx.restore();
   }
 
+  // Wordle visualizer hint
+  if (wordleTeach.phase >= 1 && pcol === 11 && prow === 4) {
+    ctx.save();
+    ctx.font = '8px "Press Start 2P", monospace';
+    ctx.fillStyle = '#b59f3b';
+    ctx.textAlign = 'center';
+    ctx.fillText('[SPACE] tiles', 11 * TILE + TILE / 2, 4 * TILE - 4);
+    ctx.restore();
+  }
+
   // Master door
   if (prow === PUZZLE_DOOR.nearRow && PUZZLE_DOOR.cols.some(c => Math.abs(pcol - c) <= 1)) {
     ctx.save();
@@ -1193,7 +1349,7 @@ const POP = {
 
 function drawPopup() {
   if (!popup.open) return;
-  if (!popup.station && !popup.isVent && !popup.isLocked && !popup.isWire && !popup.isImage) return;
+  if (!popup.station && !popup.isVent && !popup.isLocked && !popup.isWire && !popup.isImage && !popup.isWordleViz) return;
 
   // Full-screen image view
   if (popup.isImage) {
@@ -1213,6 +1369,95 @@ function drawPopup() {
     ctx.fillStyle = 'rgba(200,200,200,0.6)';
     ctx.textAlign = 'center';
     ctx.fillText('[SPACE] or [ESC] to close', W / 2, H - 12);
+    ctx.restore();
+    return;
+  }
+
+  // Wordle Visualizer
+  if (popup.isWordleViz) {
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    ctx.textAlign = 'center';
+
+    const tileS = 36, gap = 5;
+    const colors = { G: '#538d4e', Y: '#b59f3b', X: '#787c7e', _: '#3a3a4a' };
+
+    // Title
+    ctx.font = '10px "Press Start 2P", monospace';
+    ctx.fillStyle = '#c8c8d0';
+    if (wordleViz.mode === 'test') {
+      ctx.fillText('Can ANGER produce this pattern?', W / 2, 30);
+      // Target pattern
+      const tpx = W / 2 - ((5 * (tileS + gap)) - gap) / 2;
+      for (let i = 0; i < 5; i++) {
+        ctx.fillStyle = colors[wordleViz.targetPattern[i]];
+        ctx.fillRect(tpx + i * (tileS + gap), 42, tileS, tileS);
+      }
+    } else {
+      ctx.fillText('Wordle Visualizer', W / 2, 30);
+    }
+
+    // Answer word display
+    ctx.font = '11px "Press Start 2P", monospace';
+    ctx.fillStyle = '#8a8a9a';
+    ctx.textAlign = 'center';
+    ctx.fillText('Answer: ' + (wordleViz.answer || '?????'), W / 2, 105);
+
+    // Guess tiles
+    const guess = wordleViz.guess.padEnd(5, ' ');
+    const pattern = (wordleViz.guess.length === 5 && wordleViz.answer.length === 5)
+      ? computeWordlePattern(wordleViz.answer, wordleViz.guess) : null;
+    const gx = W / 2 - ((5 * (tileS + gap)) - gap) / 2;
+    const gy = 120;
+    for (let i = 0; i < 5; i++) {
+      const letter = guess[i];
+      const col = (pattern && i < wordleViz.guess.length) ? pattern[i] : '_';
+      ctx.fillStyle = colors[col];
+      ctx.fillRect(gx + i * (tileS + gap), gy, tileS, tileS);
+      ctx.strokeStyle = '#5a5a6a'; ctx.lineWidth = 2;
+      ctx.strokeRect(gx + i * (tileS + gap), gy, tileS, tileS);
+      if (letter !== ' ') {
+        ctx.font = '16px "Press Start 2P", monospace';
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.fillText(letter, gx + i * (tileS + gap) + tileS / 2, gy + tileS / 2 + 6);
+      }
+    }
+
+    // Instructions
+    ctx.font = '8px "Press Start 2P", monospace';
+    ctx.fillStyle = '#7a7a8a';
+    ctx.textAlign = 'center';
+    ctx.fillText('Type a 5-letter word. Backspace to clear.', W / 2, gy + tileS + 24);
+
+    if (wordleViz.mode === 'test') {
+      // Yes / No buttons
+      ctx.font = '9px "Press Start 2P", monospace';
+      const btnY = gy + tileS + 50;
+      // [1] Yes
+      ctx.fillStyle = '#3a5a3a';
+      ctx.fillRect(W / 2 - 170, btnY, 155, 30);
+      ctx.strokeStyle = '#2a4a2a'; ctx.lineWidth = 2;
+      ctx.strokeRect(W / 2 - 170, btnY, 155, 30);
+      ctx.fillStyle = '#d0e0d0';
+      ctx.fillText('[1] Yes, possible', W / 2 - 92, btnY + 20);
+      // [2] No
+      ctx.fillStyle = '#5a3a3a';
+      ctx.fillRect(W / 2 + 15, btnY, 155, 30);
+      ctx.strokeStyle = '#4a2a2a'; ctx.lineWidth = 2;
+      ctx.strokeRect(W / 2 + 15, btnY, 155, 30);
+      ctx.fillStyle = '#e0d0d0';
+      ctx.fillText('[2] No, impossible', W / 2 + 92, btnY + 20);
+
+      ctx.font = '8px "Press Start 2P", monospace';
+      ctx.fillStyle = '#5a5a6a';
+      ctx.fillText('Find a real word making this pattern, or decide it\'s impossible.', W / 2, btnY + 52);
+    }
+
+    ctx.font = '8px "Press Start 2P", monospace';
+    ctx.fillStyle = '#4a4a5a';
+    ctx.fillText('[ESC] to close', W / 2, H - 12);
     ctx.restore();
     return;
   }
