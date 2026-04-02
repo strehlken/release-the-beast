@@ -2103,6 +2103,50 @@ function drawWireContactPoints() {
   }
 }
 
+function drawBeastCellDarkness() {
+  // Collect active light positions
+  const lights = [];
+  for (const st of STATIONS) {
+    if (st.solved) lights.push({ x: LIGHT_X, y: st.lightRow * TILE + TILE / 2 });
+  }
+  if (WIRE.stage >= 5 && WIRE.stage !== 6) lights.push({ x: LIGHT_X, y: WIRE.lightRow * TILE + TILE / 2 });
+
+  // Draw darkness over beast cell area using a temporary canvas approach:
+  // Fill the beast cell with near-black, then use radial gradients to "erase" near lights
+  ctx.save();
+
+  // Clip to beast cell interior (cols 1-6, rows 4-11 roughly, but include row 3 for door area)
+  ctx.beginPath();
+  ctx.rect(BEAST_LEFT, BEAST_TOP, BEAST_RIGHT - BEAST_LEFT, BEAST_BOTTOM - BEAST_TOP);
+  ctx.clip();
+
+  if (lights.length === 0) {
+    // No lights: fully dark
+    ctx.fillStyle = '#050510';
+    ctx.fillRect(BEAST_LEFT, BEAST_TOP, BEAST_RIGHT - BEAST_LEFT, BEAST_BOTTOM - BEAST_TOP);
+  } else {
+    // Dark base
+    ctx.fillStyle = 'rgba(5, 5, 16, 0.92)';
+    ctx.fillRect(BEAST_LEFT, BEAST_TOP, BEAST_RIGHT - BEAST_LEFT, BEAST_BOTTOM - BEAST_TOP);
+
+    // Cut light holes using destination-out compositing
+    ctx.globalCompositeOperation = 'destination-out';
+    for (const l of lights) {
+      const r = TILE * 3.5;
+      const grad = ctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, r);
+      grad.addColorStop(0, 'rgba(0,0,0,0.95)');
+      grad.addColorStop(0.3, 'rgba(0,0,0,0.7)');
+      grad.addColorStop(0.6, 'rgba(0,0,0,0.3)');
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(l.x - r, l.y - r, r * 2, r * 2);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  ctx.restore();
+}
+
 function drawLightBeams() {
   // Collect all light rows from solved stations + wire puzzle
   const lightRows = [];
@@ -2333,8 +2377,8 @@ function render() {
     for (let c = 0; c < COLS; c++) {
       const t = MAP[r][c];
       if (t === 3) {
-        ctx.fillStyle = '#050510';
-        ctx.fillRect(c * TILE, r * TILE, TILE, TILE);
+        // Draw floor underneath (visible near spotlights)
+        drawFloor(c, r);
       } else if (t === 4) {
         drawCorridorTile(c, r);
       } else if (t === 5) {
@@ -2356,6 +2400,9 @@ function render() {
 
   // Corridor exit daylight
   drawCorridorLight();
+
+  // Beast cell darkness overlay (floor tiles visible near spotlights)
+  drawBeastCellDarkness();
 
   // Beast
   drawBeast();
