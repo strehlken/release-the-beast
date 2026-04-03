@@ -1349,7 +1349,7 @@ function drawNStrokesFloor(col, row) {
 
 // Draw N-Strokes: chained against far wall, grey bucket hat, sitting
 function drawNStrokes() {
-  // Sitting against east wall (col 22), vertically centered
+  // Kneeling against east wall
   const cx = 21 * TILE + TILE / 2;
   const cy = 8 * TILE + TILE / 2;
   const p = 2;
@@ -1359,64 +1359,98 @@ function drawNStrokes() {
     ctx.fillRect(cx + offX * p, cy + offY * p, w * p, h * p);
   };
 
-  const skin  = '#c68c5a';
-  const hat   = '#7a7a7a';
-  const hatDk = '#5a5a5a';
-  const shirt = '#4a5a3a';
-  const pants = '#3a3a4a';
-  const chain = '#6a6a6a';
+  const skin    = '#c68c5a';
+  const skinDk  = '#a06a3a';
+  const hat     = '#8a8a8a';
+  const hatBand = '#6a6a6a';
+  const hatBrim = '#7a7a7a';
+  const shirt   = '#3a5a2a';
+  const shirtDk = '#2a4a1a';
+  const pants   = '#3a3a2a';
+  const chain   = '#7a7a7a';
+  const chainDk = '#5a5a5a';
 
-  // Chains from wall
+  // Chains from wall — thicker, more links
   ctx.strokeStyle = chain;
   ctx.lineWidth = 2;
-  // Left chain
   ctx.beginPath();
-  ctx.moveTo(22 * TILE, cy - 3 * p);
-  ctx.lineTo(cx + 3 * p, cy - 1 * p);
+  ctx.moveTo(22 * TILE, cy - 4 * p);
+  ctx.lineTo(cx + 4 * p, cy - 1 * p);
   ctx.stroke();
-  // Right chain
   ctx.beginPath();
-  ctx.moveTo(22 * TILE, cy + 2 * p);
-  ctx.lineTo(cx + 3 * p, cy + 2 * p);
+  ctx.moveTo(22 * TILE, cy + 3 * p);
+  ctx.lineTo(cx + 4 * p, cy + 2 * p);
   ctx.stroke();
+  // Chain link dots
+  for (let i = 0; i < 3; i++) {
+    const t = (i + 1) / 4;
+    ctx.fillStyle = chainDk;
+    ctx.fillRect(cx + 4*p + (22*TILE - cx - 4*p) * t - 1, cy - 4*p + (3*p)*t - 1, 3, 3);
+  }
+  // Wall anchors
+  ctx.fillStyle = chainDk;
+  ctx.fillRect(22 * TILE - 3, cy - 5 * p, 5, 4);
+  ctx.fillRect(22 * TILE - 3, cy + 2 * p, 5, 4);
 
-  // Chain links on wall
-  ctx.fillStyle = '#5a5a5a';
-  ctx.fillRect(22 * TILE - 2, cy - 4 * p, 4, 3);
-  ctx.fillRect(22 * TILE - 2, cy + 1 * p, 4, 3);
+  // === BUCKET HAT (large, floppy) ===
+  px(-5, -9, 10, 3, hat);       // crown
+  px(-6, -6, 12, 1, hatBrim);   // wide brim
+  px(-4, -8, 8, 1, hatBand);    // band
 
-  // Bucket hat (wider, flat top)
-  px(-4, -8, 8, 2, hat);     // flat top
-  px(-5, -6, 10, 1, hatDk);  // brim
-  px(-3, -7, 6, 1, hatDk);   // band
-
-  // Head
-  px(-3, -6, 6, 5, skin);
-  // Eyes (looking left toward Harry Bonds)
-  px(-2, -5, 2, 1, '#fff');
-  px(-2, -5, 1, 1, '#222');
+  // === HEAD ===
+  px(-4, -6, 8, 5, skin);
+  // Hair under hat
+  px(-4, -6, 1, 3, '#2a1a0a');
+  px(3, -6, 1, 3, '#2a1a0a');
+  // Eyes (looking left)
+  px(-3, -5, 2, 1, '#fff');
+  px(-3, -5, 1, 1, '#1a1a1a');
   px(1, -5, 2, 1, '#fff');
-  px(1, -5, 1, 1, '#222');
+  px(1, -5, 1, 1, '#1a1a1a');
+  // Eyebrows
+  px(-3, -6, 2, 1, skinDk);
+  px(1, -6, 2, 1, skinDk);
+  // Nose
+  px(0, -3, 1, 1, skinDk);
   // Mouth
-  px(-1, -2, 2, 1, '#a06a3a');
+  px(-1, -2, 3, 1, skinDk);
 
-  // Torso (sitting, compressed)
-  px(-3, -1, 6, 4, shirt);
+  // === TORSO (olive green with chain X) ===
+  px(-4, -1, 8, 5, shirt);
+  px(-4, -1, 1, 5, shirtDk);   // left shadow
+  px(3, -1, 1, 5, shirtDk);    // right shadow
+  // Chain X across chest
+  ctx.strokeStyle = chain;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(cx - 3*p, cy - 1*p);
+  ctx.lineTo(cx + 3*p, cy + 3*p);
+  ctx.moveTo(cx + 3*p, cy - 1*p);
+  ctx.lineTo(cx - 3*p, cy + 3*p);
+  ctx.stroke();
 
-  // Arms at sides (wrists chained)
-  px(-4, -1, 1, 4, skin);
-  px(3, -1, 1, 4, skin);
-  // Shackles
-  px(-5, 2, 2, 1, chain);
-  px(3, 2, 2, 1, chain);
+  // === ARMS (wrists shackled) ===
+  px(-5, -1, 1, 4, skin);
+  px(4, -1, 1, 4, skin);
+  px(-6, 0, 1, 3, skin);  // forearm bent
+  px(5, 0, 1, 3, skin);
+  // Shackles (thicker)
+  px(-6, 2, 2, 1, chain);
+  px(-7, 2, 1, 1, chainDk);
+  px(5, 2, 2, 1, chain);
+  px(6, 2, 1, 1, chainDk);
 
-  // Legs (sitting, bent forward)
-  px(-3, 3, 6, 2, pants);
-  px(-3, 5, 3, 2, pants);
-  px(1, 5, 3, 2, pants);
+  // === LEGS (kneeling) ===
+  px(-3, 4, 3, 2, pants);
+  px(0, 4, 3, 2, pants);
+  px(-3, 6, 3, 2, pants);   // lower leg folded
+  px(0, 6, 3, 2, pants);
+  // Knees
+  px(-2, 5, 2, 1, '#2a2a1a');
+  px(1, 5, 2, 1, '#2a2a1a');
   // Shoes
-  px(-4, 6, 3, 1, '#222');
-  px(1, 6, 3, 1, '#222');
+  px(-4, 7, 3, 1, '#1a1a1a');
+  px(1, 7, 3, 1, '#1a1a1a');
 }
 
 // Corridor exit light (far right end)
@@ -2033,65 +2067,90 @@ function drawPlayer() {
   };
 
   const skin   = '#c68c5a';
-  const hat    = '#1a3a8a';
-  const jersey = '#e8e8e8';
-  const stripe = '#1a3a8a';
-  const pants  = '#3d3d5c';
-  const shoes  = '#222';
+  const skinDk = '#a06a3a';
+  const hair   = '#1a1a0a';
+  const cap    = '#1a1a2a';
+  const capBrim = '#2a2a3a';
+  const shirtW = '#d8d8e0';   // white stripes
+  const shirtN = '#2a2a4a';   // navy stripes
+  const pants  = '#2a2a4a';
+  const pantsDk = '#1a1a3a';
+  const shoes  = '#1a1a1a';
   const bat    = '#c89040';
   const batDk  = '#a06820';
+  const batTip = '#daa050';
 
-  px(-3, -7, 6, 2, hat);
+  // === HAIR + CAP ===
+  px(-3, -8, 6, 2, hair);     // hair top
+  px(-4, -7, 8, 1, hair);     // hair sides
+  px(-3, -7, 6, 1, cap);      // cap crown
   if (facing === 'left') {
-    px(-5, -5, 4, 1, hat);
-    px(-3, -5, 6, 1, hat);
+    px(-5, -6, 4, 1, capBrim);
+    px(-3, -6, 6, 1, cap);
   } else if (facing === 'right') {
-    px(-3, -5, 6, 1, hat);
-    px(1, -5, 4, 1, hat);
+    px(-3, -6, 6, 1, cap);
+    px(1, -6, 4, 1, capBrim);
   } else {
-    px(-4, -5, 8, 1, hat);
+    px(-4, -6, 8, 1, capBrim);
   }
 
-  px(-3, -5, 6, 4, skin);
+  // === HEAD ===
+  px(-3, -6, 6, 5, skin);
+  // Hair on sides
+  px(-3, -6, 1, 2, hair);
+  px(2, -6, 1, 2, hair);
+
   if (facing === 'up') {
-    px(-3, -5, 6, 1, hat);
+    px(-3, -6, 6, 2, hair);   // back of head
   } else if (facing === 'left') {
-    px(-2, -4, 2, 1, '#fff');
-    px(-2, -4, 1, 1, '#222');
-    px(-1, -2, 2, 1, '#a06a3a');
+    px(-2, -5, 2, 1, '#fff');
+    px(-2, -5, 1, 1, '#1a1a1a');
+    px(0, -3, 1, 1, skinDk);  // nose
+    px(-1, -2, 2, 1, skinDk); // mouth
   } else if (facing === 'right') {
-    px(0, -4, 2, 1, '#fff');
-    px(1, -4, 1, 1, '#222');
-    px(-1, -2, 2, 1, '#a06a3a');
+    px(0, -5, 2, 1, '#fff');
+    px(1, -5, 1, 1, '#1a1a1a');
+    px(0, -3, 1, 1, skinDk);
+    px(-1, -2, 2, 1, skinDk);
   } else {
-    px(-2, -4, 2, 1, '#fff');
-    px(1, -4, 2, 1, '#fff');
-    px(-2, -4, 1, 1, '#222');
-    px(2, -4, 1, 1, '#222');
-    px(-1, -2, 2, 1, '#a06a3a');
+    // Front face
+    px(-2, -5, 2, 1, '#fff');
+    px(1, -5, 2, 1, '#fff');
+    px(-2, -5, 1, 1, '#1a1a1a');
+    px(2, -5, 1, 1, '#1a1a1a');
+    px(0, -3, 1, 1, skinDk);  // nose
+    px(-1, -2, 2, 1, skinDk); // mouth
   }
 
-  px(-3, -1, 6, 4, jersey);
-  px(-3, 0, 6, 1, stripe);
-  if (facing === 'up') {
-    px(-1, 0, 1, 2, stripe);
-    px(0, 0, 1, 1, stripe);
-    px(0, 1, 1, 1, stripe);
-    px(1, 0, 1, 2, stripe);
-  }
+  // === TORSO (striped shirt — white/navy horizontal) ===
+  px(-3, -1, 6, 1, shirtW);
+  px(-3, 0, 6, 1, shirtN);
+  px(-3, 1, 6, 1, shirtW);
+  px(-3, 2, 6, 1, shirtN);
 
+  // === ARMS ===
   if (facing !== 'right') {
     const armOff = walkFrame === 1 && moving ? -1 : 0;
-    px(-5, -1 + armOff, 2, 3, skin);
+    px(-5, -1 + armOff, 2, 2, shirtW);
+    px(-5, 1 + armOff, 2, 1, skin);
   }
   if (facing !== 'left') {
     const armOff = walkFrame === 1 && moving ? 1 : 0;
-    px(3, -1 + armOff, 2, 3, skin);
-    px(4, -4, 1, 4, bat);
-    px(4, -6, 1, 2, batDk);
+    px(3, -1 + armOff, 2, 2, shirtW);
+    px(3, 1 + armOff, 2, 1, skin);
+    // Bat over shoulder — angled
+    px(4, -5, 1, 5, bat);
+    px(4, -7, 1, 2, batDk);   // handle
+    px(4, -8, 1, 1, batTip);  // knob
+    px(5, -3, 1, 2, bat);     // width of bat barrel
   }
 
+  // === PANTS ===
   px(-3, 3, 6, 2, pants);
+  px(-3, 3, 1, 2, pantsDk);   // left shadow
+  px(2, 3, 1, 2, pantsDk);    // right shadow
+
+  // === LEGS + SHOES ===
   if (moving && walkFrame === 1) {
     px(-3, 5, 2, 2, pants);
     px(1, 5, 2, 2, pants);
