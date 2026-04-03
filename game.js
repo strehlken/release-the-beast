@@ -7,378 +7,57 @@ const W = COLS * TILE;
 const H = ROWS * TILE;
 
 // === SPRITE SYSTEM ===
-// 16×24 internal pixels, rendered at 2x = 32×48 on screen
-const SPX = 2; // sprite pixel scale
-const SPR_W = 16, SPR_H = 24;
+// Sprites loaded from sprite sheet (assets/sprites.png)
+// Each frame is 32×48 pixels. Sheet layout (left to right):
+// 0=hb_front, 1=hb_back, 2=hb_left, 3=hb_right, 4=hb_idle, 5=hb_walk
+// 6=ns_front, 7=ns_back, 8=ns_idle, 9=ns_kneel
+const SPR_W = 32, SPR_H = 48;
+const spriteSheet = new Image();
+spriteSheet.src = 'assets/sprites.png';
 
-// Shared sprite palette — both characters use these colors
-const SPAL = {
-  '.': null,           // transparent
-  'S': '#c68c5a',      // skin
-  's': '#a06a3a',      // skin dark
-  'H': '#1a1a0a',      // hair / black
-  'W': '#d8d8e0',      // white stripe
-  'B': '#2a2a4a',      // navy blue
-  'K': '#1a1a1a',      // black (shoes, outline)
-  'E': '#ffffff',      // eye white
-  'P': '#2a2a3a',      // cap dark
-  'G': '#8a8a8a',      // gray (bucket hat)
-  'g': '#6a6a6a',      // hat band / dark gray
-  'O': '#3a5a2a',      // olive green shirt
-  'o': '#2a4a1a',      // olive shadow
-  'C': '#7a7a7a',      // chain
-  'b': '#3a3a5a',      // pants highlight
+// Frame indices in sheet
+const SF = {
+  HB_FRONT: 0, HB_BACK: 1, HB_LEFT: 2, HB_RIGHT: 3,
+  HB_IDLE: 4, HB_WALK: 5,
+  NS_FRONT: 6, NS_BACK: 7, NS_IDLE: 8, NS_KNEEL: 9,
 };
 
 // Harry Bonds frames — 16×24, character fills 10-12 cols wide
 // Hair: flat on top, volume on sides. Shirt: 3px stripes each.
-const HB_DOWN_1 = [
-  '....HHHHHH......',
-  '...HSSSSSSH.....',
-  '...HSSSSSH......',
-  '..PPPPPPPPPP....',
-  '...HSSSSSSSH....',
-  '...SESSSESES....',
-  '...SSSSSSSS.....',
-  '....SSssSSS.....',
-  '.....SSSS.......',
-  '...WWWWWWWW.....',
-  '...WWWWWWWW.....',
-  '...WWWWWWWW.....',
-  '..SBBBBBBBS....',
-  '..SBBBBBBBBS....',
-  '..SBBBBBBBS....',
-  '...BBBBBBBB.....',
-  '...BBBBBBBB.....',
-  '...BBBBBBBB.....',
-  '...BBB..BBB.....',
-  '...BBB..BBB.....',
-  '...BBB..BBB.....',
-  '...KKK..KKK.....',
-  '................',
-  '................',
-].map(r => r.slice(0,16));
-
-const HB_DOWN_2 = [
-  '....HHHHHH......',
-  '...HSSSSSSH.....',
-  '...HSSSSSH......',
-  '..PPPPPPPPPP....',
-  '...HSSSSSSSH....',
-  '...SESSSESES....',
-  '...SSSSSSSS.....',
-  '....SSssSSS.....',
-  '.....SSSS.......',
-  '...WWWWWWWW.....',
-  '...WWWWWWWW.....',
-  '...WWWWWWWW.....',
-  '..SBBBBBBBS....',
-  '..SBBBBBBBBS....',
-  '..SBBBBBBBS....',
-  '...BBBBBBBB.....',
-  '...BBBBBBBB.....',
-  '...BBBBBBBB.....',
-  '..BBB....BBB....',
-  '..BBB....BBB....',
-  '...BBB..BBB.....',
-  '..KKK....KKK....',
-  '................',
-  '................',
-].map(r => r.slice(0,16));
-
-const HB_UP_1 = [
-  '....HHHHHH......',
-  '...HHHHHHHH.....',
-  '...HHHHHHHH.....',
-  '..PPPPPPPPPP....',
-  '...HHHHHHHH.....',
-  '...SSHHHHSS.....',
-  '...SSSSSSSS.....',
-  '....SSSSSS......',
-  '.....SSSS.......',
-  '...WWWWWWWW.....',
-  '...WWWWWWWW.....',
-  '...WWWWWWWW.....',
-  '..SBBBBBBBS....',
-  '..SBBBBBBBBS....',
-  '..SBBBBBBBS....',
-  '...BBBBBBBB.....',
-  '...BBBBBBBB.....',
-  '...BBBBBBBB.....',
-  '...BBB..BBB.....',
-  '...BBB..BBB.....',
-  '...BBB..BBB.....',
-  '...KKK..KKK.....',
-  '................',
-  '................',
-].map(r => r.slice(0,16));
-
-const HB_UP_2 = [
-  '....HHHHHH......',
-  '...HHHHHHHH.....',
-  '...HHHHHHHH.....',
-  '..PPPPPPPPPP....',
-  '...HHHHHHHH.....',
-  '...SSHHHHSS.....',
-  '...SSSSSSSS.....',
-  '....SSSSSS......',
-  '.....SSSS.......',
-  '...WWWWWWWW.....',
-  '...WWWWWWWW.....',
-  '...WWWWWWWW.....',
-  '..SBBBBBBBS....',
-  '..SBBBBBBBBS....',
-  '..SBBBBBBBS....',
-  '...BBBBBBBB.....',
-  '...BBBBBBBB.....',
-  '...BBBBBBBB.....',
-  '..BBB....BBB....',
-  '..BBB....BBB....',
-  '...BBB..BBB.....',
-  '..KKK....KKK....',
-  '................',
-  '................',
-].map(r => r.slice(0,16));
-
-const HB_LEFT_1 = [
-  '.....HHHH.......',
-  '....HSSSSH......',
-  '....HSSSS.......',
-  '...PPPPPPPP.....',
-  '....SSSSSSH.....',
-  '...ESESSS.......',
-  '...SSSSSSS......',
-  '....SSssS.......',
-  '.....SSS........',
-  '...WWWWWWW......',
-  '...WWWWWWW......',
-  '...WWWWWWW......',
-  '...BBBBBBB......',
-  '..SBBBBBBBS.....',
-  '...BBBBBBB......',
-  '...BBBBBBB......',
-  '...BBBBBBB......',
-  '...BBBBBBB......',
-  '...BBB.BBB......',
-  '...BBB.BBB......',
-  '...BBB.BBB......',
-  '...KKK.KKK......',
-  '................',
-  '................',
-].map(r => r.slice(0,16));
-
-const HB_LEFT_2 = [
-  '.....HHHH.......',
-  '....HSSSSH......',
-  '....HSSSS.......',
-  '...PPPPPPPP.....',
-  '....SSSSSSH.....',
-  '...ESESSS.......',
-  '...SSSSSSS......',
-  '....SSssS.......',
-  '.....SSS........',
-  '...WWWWWWW......',
-  '...WWWWWWW......',
-  '...WWWWWWW......',
-  '...BBBBBBB......',
-  '..SBBBBBBBS.....',
-  '...BBBBBBB......',
-  '...BBBBBBB......',
-  '...BBBBBBB......',
-  '...BBBBBBB......',
-  '..BBB...BBB.....',
-  '..BBB...BBB.....',
-  '...BBB.BBB......',
-  '..KKK...KKK.....',
-  '................',
-  '................',
-].map(r => r.slice(0,16));
-
-const HB_RIGHT_1 = [
-  '.......HHHH.....',
-  '......HSSssh....',
-  '.......SSSSH....',
-  '.....PPPPPPPP...',
-  '....HSSSSSS.....',
-  '.......SSSESE...',
-  '......SSSSSSS...',
-  '.......SssS.....',
-  '........SSS.....',
-  '......WWWWWWW...',
-  '......WWWWWWW...',
-  '......WWWWWWW...',
-  '......BBBBBBB...',
-  '.....SBBBBBBBS..',
-  '......BBBBBBB...',
-  '......BBBBBBB...',
-  '......BBBBBBB...',
-  '......BBBBBBB...',
-  '......BBB.BBB...',
-  '......BBB.BBB...',
-  '......BBB.BBB...',
-  '......KKK.KKK...',
-  '................',
-  '................',
-].map(r => r.slice(0,16));
-
-const HB_RIGHT_2 = [
-  '.......HHHH.....',
-  '......HSSSH.....',
-  '.......SSSSH....',
-  '.....PPPPPPPP...',
-  '....HSSSSSS.....',
-  '.......SSSESE...',
-  '......SSSSSSS...',
-  '.......SssS.....',
-  '........SSS.....',
-  '......WWWWWWW...',
-  '......WWWWWWW...',
-  '......WWWWWWW...',
-  '......BBBBBBB...',
-  '.....SBBBBBBBS..',
-  '......BBBBBBB...',
-  '......BBBBBBB...',
-  '......BBBBBBB...',
-  '......BBBBBBB...',
-  '.....BBB...BBB..',
-  '.....BBB...BBB..',
-  '......BBB.BBB...',
-  '.....KKK...KKK..',
-  '................',
-  '................',
-].map(r => r.slice(0,16));
-
-const HB_FRAMES = {
-  down:  [HB_DOWN_1, HB_DOWN_2],
-  up:    [HB_UP_1, HB_UP_2],
-  left:  [HB_LEFT_1, HB_LEFT_2],
-  right: [HB_RIGHT_1, HB_RIGHT_2],
-};
-
-// N-Strokes — front-facing, kneeling, wider
-const NS_IDLE = [
-  '...GGGGGGGG.....',
-  '..GGGGGGGGGG....',
-  '..GGGggggGGG....',
-  '.GGGGGGGGGGGG...',
-  '...SSSSSSSS.....',
-  '...HSSSSSSH.....',
-  '...ESSSESES.....',
-  '...SSSSSSSS.....',
-  '....SSssSS......',
-  '..SOOOOOOOOS....',
-  '..COOOOOOOC.....',
-  '.SS.OOOCOOO.SS..',
-  '.SS.OOCOOOO.SS..',
-  '..COOOOOOOC.....',
-  '..SOOOOOOOOS....',
-  '...KKKKKKKK.....',
-  '...KKKKKKKK.....',
-  '...KKKKKKKK.....',
-  '...KKK..KKK.....',
-  '...KKK..KKK.....',
-  '...KKK..KKK.....',
-  '................',
-  '................',
-  '................',
-].map(r => r.slice(0,16));
-
-const NS_TALK = [
-  '...GGGGGGGG.....',
-  '..GGGGGGGGGG....',
-  '..GGGggggGGG....',
-  '.GGGGGGGGGGGG...',
-  '...SSSSSSSS.....',
-  '...HSSSSSSH.....',
-  '...ESSSESES.....',
-  '...SSSSSSSS.....',
-  '....SSssSS......',
-  '.SSOOOOOOOOS....',
-  '..COOOOOOOC.....',
-  'SS..OOOCOOO.SS..',
-  'SS..OOCOOOO..SS.',
-  '..COOOOOOOC.....',
-  '..SOOOOOOOOS....',
-  '...KKKKKKKK.....',
-  '...KKKKKKKK.....',
-  '...KKKKKKKK.....',
-  '...KKK..KKK.....',
-  '...KKK..KKK.....',
-  '...KKK..KKK.....',
-  '................',
-  '................',
-  '................',
-].map(r => r.slice(0,16));
-
-function drawSprite(frame, x, y, scale) {
-  const s = scale || SPX;
-  for (let r = 0; r < frame.length; r++) {
-    const row = frame[r];
-    for (let c = 0; c < row.length; c++) {
-      const ch = row[c];
-      if (ch === '.' || !SPAL[ch]) continue;
-      ctx.fillStyle = SPAL[ch];
-      ctx.fillRect(x + c * s, y + r * s, s, s);
-    }
-  }
+// Draw a sprite frame from the sheet
+function drawSpriteFrame(frameIndex, x, y) {
+  if (!spriteSheet.complete) return;
+  ctx.drawImage(spriteSheet, frameIndex * SPR_W, 0, SPR_W, SPR_H, x, y, SPR_W, SPR_H);
 }
 
 // Sprite test view — press T in pause menu
 let spriteTestMode = false;
 
 function drawSpriteTest() {
-  if (!spriteTestMode) return;
+  if (!spriteTestMode || !spriteSheet.complete) return;
   ctx.fillStyle = '#0d0d1a';
   ctx.fillRect(0, 0, W, H);
-
-  const zoom = 4;
-  const sw = SPR_W * zoom;
-  const sh = SPR_H * zoom;
-  const gap = 8;
-  let x = 10, y = 10;
-
   ctx.save();
-  ctx.font = '10px "Press Start 2P", monospace';
-  ctx.fillStyle = '#e67e22';
-  ctx.fillText('HARRY BONDS', x, y + 10);
-  y += 20;
-
-  const labels = ['DOWN 1','DOWN 2','UP 1','UP 2','LEFT 1','LEFT 2','RIGHT 1','RIGHT 2'];
-  const allHB = [HB_DOWN_1, HB_DOWN_2, HB_UP_1, HB_UP_2, HB_LEFT_1, HB_LEFT_2, HB_RIGHT_1, HB_RIGHT_2];
-  for (let i = 0; i < allHB.length; i++) {
-    if (x + sw > W - 10) { x = 10; y += sh + 20; }
-    // Grid background
+  const zoom = 4;
+  const sw = SPR_W * zoom, sh = SPR_H * zoom, gap = 8;
+  let x = 10, y = 30;
+  const labels = ['HB Front','HB Back','HB Left','HB Right','HB Idle','HB Walk',
+                  'NS Front','NS Back','NS Idle','NS Kneel'];
+  for (let i = 0; i < 10; i++) {
+    if (x + sw > W - 10) { x = 10; y += sh + 24; }
     ctx.fillStyle = '#1a1a2e';
     ctx.fillRect(x, y, sw, sh);
-    drawSprite(allHB[i], x, y, zoom);
-    ctx.fillStyle = '#7a7a8a';
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(spriteSheet, i * SPR_W, 0, SPR_W, SPR_H, x, y, sw, sh);
     ctx.font = '7px "Press Start 2P", monospace';
+    ctx.fillStyle = '#7a7a8a';
+    ctx.textAlign = 'left';
     ctx.fillText(labels[i], x, y + sh + 10);
     x += sw + gap;
   }
-
-  x = 10; y += sh + 30;
-  ctx.font = '10px "Press Start 2P", monospace';
-  ctx.fillStyle = '#3a7a3a';
-  ctx.fillText('N-STROKES', x, y + 10);
-  y += 20;
-
-  ctx.fillStyle = '#1a1a2e';
-  ctx.fillRect(x, y, sw, sh);
-  drawSprite(NS_IDLE, x, y, zoom);
-  ctx.fillStyle = '#7a7a8a';
-  ctx.font = '7px "Press Start 2P", monospace';
-  ctx.fillText('IDLE', x, y + sh + 10);
-  x += sw + gap;
-
-  ctx.fillStyle = '#1a1a2e';
-  ctx.fillRect(x, y, sw, sh);
-  drawSprite(NS_TALK, x, y, zoom);
-  ctx.fillStyle = '#7a7a8a';
-  ctx.fillText('TALK', x, y + sh + 10);
-
   ctx.font = '8px "Press Start 2P", monospace';
   ctx.fillStyle = '#5a5a6a';
+  ctx.textAlign = 'left';
   ctx.fillText('[T] to exit test view', 10, H - 12);
   ctx.restore();
 }
@@ -1735,10 +1414,10 @@ function drawNStrokesFloor(col, row) {
 // Draw N-Strokes: chained against far wall, grey bucket hat, sitting
 function drawNStrokes() {
   const nx = 21 * TILE;
-  const ny = 8 * TILE - (SPR_H * SPX - TILE) / 2;
+  const ny = 8 * TILE - (SPR_H - TILE) / 2;
 
   // Chains from wall
-  const wcx = nx + SPR_W * SPX / 2;
+  const wcx = nx + SPR_W / 2;
   const wcy = 8 * TILE + TILE / 2;
   ctx.strokeStyle = '#7a7a7a';
   ctx.lineWidth = 2;
@@ -1750,12 +1429,11 @@ function drawNStrokes() {
   ctx.moveTo(22 * TILE, wcy + 6);
   ctx.lineTo(wcx + 12, wcy + 4);
   ctx.stroke();
-  // Wall anchors
   ctx.fillStyle = '#5a5a5a';
   ctx.fillRect(22 * TILE - 3, wcy - 10, 5, 4);
   ctx.fillRect(22 * TILE - 3, wcy + 4, 5, 4);
 
-  drawSprite(NS_IDLE, nx, ny);
+  drawSpriteFrame(SF.NS_IDLE, nx, ny);
 }
 
 // Corridor exit light (far right end)
@@ -2362,12 +2040,19 @@ function drawPlayer() {
               || keys['w'] || keys['s'] || keys['a'] || keys['d'];
   if (!moving) walkFrame = 0;
 
-  const frames = HB_FRAMES[facing] || HB_FRAMES.down;
-  const frame = frames[walkFrame] || frames[0];
-  // Center sprite on player tile (sprite is 32×48, tile is 32×32)
+  // Pick frame from sprite sheet based on facing + walk
+  const dirFrames = {
+    down:  [SF.HB_FRONT, SF.HB_WALK],
+    up:    [SF.HB_BACK, SF.HB_BACK],
+    left:  [SF.HB_LEFT, SF.HB_LEFT],
+    right: [SF.HB_RIGHT, SF.HB_RIGHT],
+  };
+  const pair = dirFrames[facing] || dirFrames.down;
+  const fi = moving ? pair[walkFrame] : pair[0];
+  // Center sprite on tile (32×48 sprite, 32×32 tile)
   const sx = player.x;
-  const sy = player.y - (SPR_H * SPX - TILE) / 2;
-  drawSprite(frame, sx, sy);
+  const sy = player.y - (SPR_H - TILE) / 2;
+  drawSpriteFrame(fi, sx, sy);
 }
 
 // --- Light beams & Beast ---
