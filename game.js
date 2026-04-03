@@ -30,219 +30,220 @@ const SPAL = {
   'b': '#3a3a5a',      // pants highlight
 };
 
-// Harry Bonds frames — each is array of 24 strings, 16 chars wide
+// Harry Bonds frames — 16×24, character fills 10-12 cols wide
+// Hair: flat on top, volume on sides. Shirt: 3px stripes each.
 const HB_DOWN_1 = [
-  '......HH........',
-  '.....HHHH.......',
-  '.....HPPH.......',
-  '.....PPPP.......',
-  '....PPPPPP......',
-  '....SSSSSS......',
-  '....ESESES......',
-  '....SSSSSS......',
-  '.....SssS.......',
-  '....SWWWWS......',
-  '....BWWWWB......',
-  '...SSWWWWSS.....',
-  '...SSBWWBSS.....',
-  '....BWWWWB......',
-  '.....BBBB.......',
-  '.....BBBB.......',
-  '.....bBBb.......',
-  '....BB..BB......',
-  '....BB..BB......',
-  '....KK..KK......',
-  '................',
-  '................',
+  '....HHHHHH......',
+  '...HSSSSSSH.....',
+  '...HSSSSSH......',
+  '..PPPPPPPPPP....',
+  '...HSSSSSSSH....',
+  '...SESSSESES....',
+  '...SSSSSSSS.....',
+  '....SSssSSS.....',
+  '.....SSSS.......',
+  '...WWWWWWWW.....',
+  '...WWWWWWWW.....',
+  '...WWWWWWWW.....',
+  '..SBBBBBBBS....',
+  '..SBBBBBBBBS....',
+  '..SBBBBBBBS....',
+  '...BBBBBBBB.....',
+  '...BBBBBBBB.....',
+  '...BBBBBBBB.....',
+  '...BBB..BBB.....',
+  '...BBB..BBB.....',
+  '...BBB..BBB.....',
+  '...KKK..KKK.....',
   '................',
   '................',
 ].map(r => r.slice(0,16));
 
 const HB_DOWN_2 = [
-  '......HH........',
-  '.....HHHH.......',
-  '.....HPPH.......',
-  '.....PPPP.......',
-  '....PPPPPP......',
-  '....SSSSSS......',
-  '....ESESES......',
-  '....SSSSSS......',
-  '.....SssS.......',
-  '....SWWWWS......',
-  '....BWWWWB......',
-  '...SSWWWWSS.....',
-  '...SSBWWBSS.....',
-  '....BWWWWB......',
-  '.....BBBB.......',
-  '.....BBBB.......',
-  '.....bBBb.......',
-  '.....BB.BB......',
-  '....BB...B......',
-  '....KK..KK......',
-  '................',
-  '................',
+  '....HHHHHH......',
+  '...HSSSSSSH.....',
+  '...HSSSSSH......',
+  '..PPPPPPPPPP....',
+  '...HSSSSSSSH....',
+  '...SESSSESES....',
+  '...SSSSSSSS.....',
+  '....SSssSSS.....',
+  '.....SSSS.......',
+  '...WWWWWWWW.....',
+  '...WWWWWWWW.....',
+  '...WWWWWWWW.....',
+  '..SBBBBBBBS....',
+  '..SBBBBBBBBS....',
+  '..SBBBBBBBS....',
+  '...BBBBBBBB.....',
+  '...BBBBBBBB.....',
+  '...BBBBBBBB.....',
+  '..BBB....BBB....',
+  '..BBB....BBB....',
+  '...BBB..BBB.....',
+  '..KKK....KKK....',
   '................',
   '................',
 ].map(r => r.slice(0,16));
 
 const HB_UP_1 = [
-  '......HH........',
-  '.....HHHH.......',
-  '.....HHHH.......',
-  '.....HHHH.......',
   '....HHHHHH......',
-  '....HHHHHH......',
-  '....SSHHSS......',
+  '...HHHHHHHH.....',
+  '...HHHHHHHH.....',
+  '..PPPPPPPPPP....',
+  '...HHHHHHHH.....',
+  '...SSHHHHSS.....',
+  '...SSSSSSSS.....',
   '....SSSSSS......',
   '.....SSSS.......',
-  '....SWWWWS......',
-  '....BWWWWB......',
-  '...SSWWWWSS.....',
-  '...SSBWWBSS.....',
-  '....BWWWWB......',
-  '.....BBBB.......',
-  '.....BBBB.......',
-  '.....bBBb.......',
-  '....BB..BB......',
-  '....BB..BB......',
-  '....KK..KK......',
-  '................',
-  '................',
+  '...WWWWWWWW.....',
+  '...WWWWWWWW.....',
+  '...WWWWWWWW.....',
+  '..SBBBBBBBS....',
+  '..SBBBBBBBBS....',
+  '..SBBBBBBBS....',
+  '...BBBBBBBB.....',
+  '...BBBBBBBB.....',
+  '...BBBBBBBB.....',
+  '...BBB..BBB.....',
+  '...BBB..BBB.....',
+  '...BBB..BBB.....',
+  '...KKK..KKK.....',
   '................',
   '................',
 ].map(r => r.slice(0,16));
 
 const HB_UP_2 = [
-  '......HH........',
-  '.....HHHH.......',
-  '.....HHHH.......',
-  '.....HHHH.......',
   '....HHHHHH......',
-  '....HHHHHH......',
-  '....SSHHSS......',
+  '...HHHHHHHH.....',
+  '...HHHHHHHH.....',
+  '..PPPPPPPPPP....',
+  '...HHHHHHHH.....',
+  '...SSHHHHSS.....',
+  '...SSSSSSSS.....',
   '....SSSSSS......',
   '.....SSSS.......',
-  '....SWWWWS......',
-  '....BWWWWB......',
-  '...SSWWWWSS.....',
-  '...SSBWWBSS.....',
-  '....BWWWWB......',
-  '.....BBBB.......',
-  '.....BBBB.......',
-  '.....bBBb.......',
-  '.....BB.BB......',
-  '....BB...B......',
-  '....KK..KK......',
-  '................',
-  '................',
+  '...WWWWWWWW.....',
+  '...WWWWWWWW.....',
+  '...WWWWWWWW.....',
+  '..SBBBBBBBS....',
+  '..SBBBBBBBBS....',
+  '..SBBBBBBBS....',
+  '...BBBBBBBB.....',
+  '...BBBBBBBB.....',
+  '...BBBBBBBB.....',
+  '..BBB....BBB....',
+  '..BBB....BBB....',
+  '...BBB..BBB.....',
+  '..KKK....KKK....',
   '................',
   '................',
 ].map(r => r.slice(0,16));
 
 const HB_LEFT_1 = [
-  '.....HH.........',
-  '....HHHH........',
-  '....HPPH........',
-  '....PPPP........',
-  '...PPPPPP.......',
-  '...SSSSS........',
-  '...ESESS........',
-  '...SSSSS........',
-  '....SsS.........',
-  '...SWWWW........',
-  '...BWWWB........',
-  '...SWWWWS.......',
-  '...SBWWBS.......',
-  '...BWWWB........',
-  '....BBBB........',
-  '....BBBB........',
-  '....bBBb........',
-  '...BB..BB.......',
-  '...BB..BB.......',
-  '...KK..KK.......',
-  '................',
-  '................',
+  '.....HHHH.......',
+  '....HSSSSH......',
+  '....HSSSS.......',
+  '...PPPPPPPP.....',
+  '....SSSSSSH.....',
+  '...ESESSS.......',
+  '...SSSSSSS......',
+  '....SSssS.......',
+  '.....SSS........',
+  '...WWWWWWW......',
+  '...WWWWWWW......',
+  '...WWWWWWW......',
+  '...BBBBBBB......',
+  '..SBBBBBBBS.....',
+  '...BBBBBBB......',
+  '...BBBBBBB......',
+  '...BBBBBBB......',
+  '...BBBBBBB......',
+  '...BBB.BBB......',
+  '...BBB.BBB......',
+  '...BBB.BBB......',
+  '...KKK.KKK......',
   '................',
   '................',
 ].map(r => r.slice(0,16));
 
 const HB_LEFT_2 = [
-  '.....HH.........',
-  '....HHHH........',
-  '....HPPH........',
-  '....PPPP........',
-  '...PPPPPP.......',
-  '...SSSSS........',
-  '...ESESS........',
-  '...SSSSS........',
-  '....SsS.........',
-  '...SWWWW........',
-  '...BWWWB........',
-  '...SWWWWS.......',
-  '...SBWWBS.......',
-  '...BWWWB........',
-  '....BBBB........',
-  '....BBBB........',
-  '....bBBb........',
-  '....BB.BB.......',
-  '...BB...B.......',
-  '...KK..KK.......',
-  '................',
-  '................',
+  '.....HHHH.......',
+  '....HSSSSH......',
+  '....HSSSS.......',
+  '...PPPPPPPP.....',
+  '....SSSSSSH.....',
+  '...ESESSS.......',
+  '...SSSSSSS......',
+  '....SSssS.......',
+  '.....SSS........',
+  '...WWWWWWW......',
+  '...WWWWWWW......',
+  '...WWWWWWW......',
+  '...BBBBBBB......',
+  '..SBBBBBBBS.....',
+  '...BBBBBBB......',
+  '...BBBBBBB......',
+  '...BBBBBBB......',
+  '...BBBBBBB......',
+  '..BBB...BBB.....',
+  '..BBB...BBB.....',
+  '...BBB.BBB......',
+  '..KKK...KKK.....',
   '................',
   '................',
 ].map(r => r.slice(0,16));
 
 const HB_RIGHT_1 = [
-  '.......HH.......',
-  '......HHHH......',
-  '......HPPH......',
-  '......PPPP......',
-  '.....PPPPPP.....',
-  '......SSSSS.....',
-  '......SSESE.....',
-  '......SSSSS.....',
-  '.......SsS......',
-  '......WWWWS.....',
-  '......BWWWB.....',
-  '.....SWWWWS.....',
-  '.....SBWWBS.....',
-  '......BWWWB.....',
-  '.......BBBB.....',
-  '.......BBBB.....',
-  '.......bBBb.....',
-  '......BB..BB....',
-  '......BB..BB....',
-  '......KK..KK....',
-  '................',
-  '................',
+  '.......HHHH.....',
+  '......HSSssh....',
+  '.......SSSSH....',
+  '.....PPPPPPPP...',
+  '....HSSSSSS.....',
+  '.......SSSESE...',
+  '......SSSSSSS...',
+  '.......SssS.....',
+  '........SSS.....',
+  '......WWWWWWW...',
+  '......WWWWWWW...',
+  '......WWWWWWW...',
+  '......BBBBBBB...',
+  '.....SBBBBBBBS..',
+  '......BBBBBBB...',
+  '......BBBBBBB...',
+  '......BBBBBBB...',
+  '......BBBBBBB...',
+  '......BBB.BBB...',
+  '......BBB.BBB...',
+  '......BBB.BBB...',
+  '......KKK.KKK...',
   '................',
   '................',
 ].map(r => r.slice(0,16));
 
 const HB_RIGHT_2 = [
-  '.......HH.......',
-  '......HHHH......',
-  '......HPPH......',
-  '......PPPP......',
-  '.....PPPPPP.....',
-  '......SSSSS.....',
-  '......SSESE.....',
-  '......SSSSS.....',
-  '.......SsS......',
-  '......WWWWS.....',
-  '......BWWWB.....',
-  '.....SWWWWS.....',
-  '.....SBWWBS.....',
-  '......BWWWB.....',
-  '.......BBBB.....',
-  '.......BBBB.....',
-  '.......bBBb.....',
-  '.......BB.BB....',
-  '......BB...B....',
-  '......KK..KK....',
-  '................',
-  '................',
+  '.......HHHH.....',
+  '......HSSSH.....',
+  '.......SSSSH....',
+  '.....PPPPPPPP...',
+  '....HSSSSSS.....',
+  '.......SSSESE...',
+  '......SSSSSSS...',
+  '.......SssS.....',
+  '........SSS.....',
+  '......WWWWWWW...',
+  '......WWWWWWW...',
+  '......WWWWWWW...',
+  '......BBBBBBB...',
+  '.....SBBBBBBBS..',
+  '......BBBBBBB...',
+  '......BBBBBBB...',
+  '......BBBBBBB...',
+  '......BBBBBBB...',
+  '.....BBB...BBB..',
+  '.....BBB...BBB..',
+  '......BBB.BBB...',
+  '.....KKK...KKK..',
   '................',
   '................',
 ].map(r => r.slice(0,16));
@@ -254,71 +255,132 @@ const HB_FRAMES = {
   right: [HB_RIGHT_1, HB_RIGHT_2],
 };
 
-// N-Strokes frames (front-facing, kneeling)
+// N-Strokes — front-facing, kneeling, wider
 const NS_IDLE = [
-  '....GGGGGG......',
   '...GGGGGGGG.....',
-  '...GGggggGG.....',
   '..GGGGGGGGGG....',
-  '....SSSSSS......',
-  '....HSSHSS......',
-  '....ESESES......',
-  '....SSSSSS......',
-  '.....SssS.......',
-  '...SOOOOOS......',
-  '...COOOOC.......',
-  '..SS.OOCO.SS....',
-  '..SS.OCOO.SS....',
-  '...COOOOC.......',
-  '...SOOOOOS......',
-  '....KKKKKK......',
-  '....KKKKKK......',
-  '....KK..KK......',
-  '....KK..KK......',
-  '....KK..KK......',
-  '................',
+  '..GGGggggGGG....',
+  '.GGGGGGGGGGGG...',
+  '...SSSSSSSS.....',
+  '...HSSSSSSH.....',
+  '...ESSSESES.....',
+  '...SSSSSSSS.....',
+  '....SSssSS......',
+  '..SOOOOOOOOS....',
+  '..COOOOOOOC.....',
+  '.SS.OOOCOOO.SS..',
+  '.SS.OOCOOOO.SS..',
+  '..COOOOOOOC.....',
+  '..SOOOOOOOOS....',
+  '...KKKKKKKK.....',
+  '...KKKKKKKK.....',
+  '...KKKKKKKK.....',
+  '...KKK..KKK.....',
+  '...KKK..KKK.....',
+  '...KKK..KKK.....',
   '................',
   '................',
   '................',
 ].map(r => r.slice(0,16));
 
 const NS_TALK = [
-  '....GGGGGG......',
   '...GGGGGGGG.....',
-  '...GGggggGG.....',
   '..GGGGGGGGGG....',
-  '....SSSSSS......',
-  '....HSSHSS......',
-  '....ESESES......',
-  '....SSSSSS......',
-  '.....SsSS.......',
-  '..SSOOOOOS......',
-  '...COOOOC.......',
-  '.SS..OOCO.SS....',
-  '.SS..OCOO..SS...',
-  '...COOOOC.......',
-  '...SOOOOOS......',
-  '....KKKKKK......',
-  '....KKKKKK......',
-  '....KK..KK......',
-  '....KK..KK......',
-  '....KK..KK......',
-  '................',
+  '..GGGggggGGG....',
+  '.GGGGGGGGGGGG...',
+  '...SSSSSSSS.....',
+  '...HSSSSSSH.....',
+  '...ESSSESES.....',
+  '...SSSSSSSS.....',
+  '....SSssSS......',
+  '.SSOOOOOOOOS....',
+  '..COOOOOOOC.....',
+  'SS..OOOCOOO.SS..',
+  'SS..OOCOOOO..SS.',
+  '..COOOOOOOC.....',
+  '..SOOOOOOOOS....',
+  '...KKKKKKKK.....',
+  '...KKKKKKKK.....',
+  '...KKKKKKKK.....',
+  '...KKK..KKK.....',
+  '...KKK..KKK.....',
+  '...KKK..KKK.....',
   '................',
   '................',
   '................',
 ].map(r => r.slice(0,16));
 
-function drawSprite(frame, x, y) {
+function drawSprite(frame, x, y, scale) {
+  const s = scale || SPX;
   for (let r = 0; r < frame.length; r++) {
     const row = frame[r];
     for (let c = 0; c < row.length; c++) {
       const ch = row[c];
       if (ch === '.' || !SPAL[ch]) continue;
       ctx.fillStyle = SPAL[ch];
-      ctx.fillRect(x + c * SPX, y + r * SPX, SPX, SPX);
+      ctx.fillRect(x + c * s, y + r * s, s, s);
     }
   }
+}
+
+// Sprite test view — press T in pause menu
+let spriteTestMode = false;
+
+function drawSpriteTest() {
+  if (!spriteTestMode) return;
+  ctx.fillStyle = '#0d0d1a';
+  ctx.fillRect(0, 0, W, H);
+
+  const zoom = 4;
+  const sw = SPR_W * zoom;
+  const sh = SPR_H * zoom;
+  const gap = 8;
+  let x = 10, y = 10;
+
+  ctx.save();
+  ctx.font = '10px "Press Start 2P", monospace';
+  ctx.fillStyle = '#e67e22';
+  ctx.fillText('HARRY BONDS', x, y + 10);
+  y += 20;
+
+  const labels = ['DOWN 1','DOWN 2','UP 1','UP 2','LEFT 1','LEFT 2','RIGHT 1','RIGHT 2'];
+  const allHB = [HB_DOWN_1, HB_DOWN_2, HB_UP_1, HB_UP_2, HB_LEFT_1, HB_LEFT_2, HB_RIGHT_1, HB_RIGHT_2];
+  for (let i = 0; i < allHB.length; i++) {
+    if (x + sw > W - 10) { x = 10; y += sh + 20; }
+    // Grid background
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(x, y, sw, sh);
+    drawSprite(allHB[i], x, y, zoom);
+    ctx.fillStyle = '#7a7a8a';
+    ctx.font = '7px "Press Start 2P", monospace';
+    ctx.fillText(labels[i], x, y + sh + 10);
+    x += sw + gap;
+  }
+
+  x = 10; y += sh + 30;
+  ctx.font = '10px "Press Start 2P", monospace';
+  ctx.fillStyle = '#3a7a3a';
+  ctx.fillText('N-STROKES', x, y + 10);
+  y += 20;
+
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(x, y, sw, sh);
+  drawSprite(NS_IDLE, x, y, zoom);
+  ctx.fillStyle = '#7a7a8a';
+  ctx.font = '7px "Press Start 2P", monospace';
+  ctx.fillText('IDLE', x, y + sh + 10);
+  x += sw + gap;
+
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(x, y, sw, sh);
+  drawSprite(NS_TALK, x, y, zoom);
+  ctx.fillStyle = '#7a7a8a';
+  ctx.fillText('TALK', x, y + sh + 10);
+
+  ctx.font = '8px "Press Start 2P", monospace';
+  ctx.fillStyle = '#5a5a6a';
+  ctx.fillText('[T] to exit test view', 10, H - 12);
+  ctx.restore();
 }
 
 // Palette — Metal Gear NES
@@ -807,6 +869,13 @@ function drawPauseMenu() {
 const keys = {};
 window.addEventListener('keydown', e => {
   keys[e.key] = true;
+
+  // Sprite test mode toggle
+  if (e.key === 't' || e.key === 'T') {
+    if (spriteTestMode) { spriteTestMode = false; return; }
+    if (paused) { spriteTestMode = true; return; }
+  }
+  if (spriteTestMode) return; // block all other input in test mode
 
   // Pause menu navigation
   if (paused && !codesScreen) {
@@ -2734,6 +2803,7 @@ function render() {
   drawPopup();
   drawPauseMenu();
   drawCodeFlash();
+  drawSpriteTest();
   drawVictory();
 }
 
