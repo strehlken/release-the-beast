@@ -13,7 +13,7 @@ const H = ROWS * TILE;
 // 6=ns_front, 7=ns_back, 8=ns_idle, 9=ns_kneel
 const SPR_W = 32, SPR_H = 48;
 const spriteSheet = new Image();
-spriteSheet.src = 'assets/sprites.png';
+spriteSheet.src = 'assets/sprites.png?v=3';
 
 // Frame indices in sheet
 const SF = {
