@@ -2035,7 +2035,7 @@ let walkTimer = 0;
 
 function drawPlayer() {
   walkTimer++;
-  if (walkTimer > 10) { walkTimer = 0; walkFrame = 1 - walkFrame; }
+  if (walkTimer > 8) { walkTimer = 0; walkFrame = 1 - walkFrame; }
   const moving = keys['ArrowUp'] || keys['ArrowDown'] || keys['ArrowLeft'] || keys['ArrowRight']
               || keys['w'] || keys['s'] || keys['a'] || keys['d'];
   if (!moving) walkFrame = 0;
@@ -2044,8 +2044,8 @@ function drawPlayer() {
   const dirFrames = {
     down:  [SF.HB_FRONT, SF.HB_WALK],
     up:    [SF.HB_BACK, SF.HB_BACK],
-    left:  [SF.HB_LEFT, SF.HB_LEFT],
-    right: [SF.HB_RIGHT, SF.HB_RIGHT],
+    left:  [SF.HB_RIGHT, SF.HB_RIGHT],
+    right: [SF.HB_LEFT, SF.HB_LEFT],
   };
   const pair = dirFrames[facing] || dirFrames.down;
   const fi = moving ? pair[walkFrame] : pair[0];
