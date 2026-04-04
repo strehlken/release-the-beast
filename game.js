@@ -13,13 +13,16 @@ const H = ROWS * TILE;
 // 6=ns_front, 7=ns_back, 8=ns_idle, 9=ns_kneel
 const SPR_W = 32, SPR_H = 48;
 const spriteSheet = new Image();
-spriteSheet.src = 'assets/sprites.png?v=3';
+spriteSheet.src = 'assets/sprites.png?v=4';
 
-// Frame indices in sheet
+// Frame indices in sheet (14 frames)
 const SF = {
-  HB_FRONT: 0, HB_BACK: 1, HB_LEFT: 2, HB_RIGHT: 3,
-  HB_IDLE: 4, HB_WALK: 5,
-  NS_FRONT: 6, NS_BACK: 7, NS_IDLE: 8, NS_KNEEL: 9,
+  HB_FRONT: 0, HB_FRONT_WALK: 1,
+  HB_BACK: 2, HB_BACK_WALK: 3,
+  HB_LEFT: 4, HB_LEFT_WALK: 5,
+  HB_RIGHT: 6, HB_RIGHT_WALK: 7,
+  HB_IDLE: 8, HB_WALK: 9,
+  NS_FRONT: 10, NS_BACK: 11, NS_IDLE: 12, NS_KNEEL: 13,
 };
 
 // Harry Bonds frames — 16×24, character fills 10-12 cols wide
@@ -2042,10 +2045,10 @@ function drawPlayer() {
 
   // Pick frame from sprite sheet based on facing + walk
   const dirFrames = {
-    down:  [SF.HB_FRONT, SF.HB_WALK],
-    up:    [SF.HB_BACK, SF.HB_BACK],
-    left:  [SF.HB_RIGHT, SF.HB_RIGHT],
-    right: [SF.HB_LEFT, SF.HB_LEFT],
+    down:  [SF.HB_FRONT, SF.HB_FRONT_WALK],
+    up:    [SF.HB_BACK, SF.HB_BACK_WALK],
+    left:  [SF.HB_RIGHT, SF.HB_RIGHT_WALK],
+    right: [SF.HB_LEFT, SF.HB_LEFT_WALK],
   };
   const pair = dirFrames[facing] || dirFrames.down;
   const fi = moving ? pair[walkFrame] : pair[0];
