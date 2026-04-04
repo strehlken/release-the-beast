@@ -38,21 +38,38 @@ function drawSpriteTest() {
   ctx.fillStyle = '#0d0d1a';
   ctx.fillRect(0, 0, W, H);
   ctx.save();
-  const zoom = 4;
-  const sw = SPR_W * zoom, sh = SPR_H * zoom, gap = 8;
-  let x = 10, y = 30;
-  const labels = ['HB Front','HB FrontWalk','HB Back','HB Left','HB Right',
-                  'NS Front','NS Back','NS Idle','NS Kneel'];
-  for (let i = 0; i < 9; i++) {
-    if (x + sw > W - 10) { x = 10; y += sh + 24; }
+  const zoom = 3;
+  const sw = SPR_W * zoom, sh = SPR_H * zoom, gap = 6;
+  let x = 8, y = 20;
+  // Row 1: Harry Bonds (frames 0-4)
+  const hbLabels = ['Front','FrontWalk','Back','Left','Right'];
+  ctx.font = '8px "Press Start 2P", monospace';
+  ctx.fillStyle = '#e67e22'; ctx.textAlign = 'left';
+  ctx.fillText('HARRY BONDS', x, y - 4);
+  for (let i = 0; i < 5; i++) {
     ctx.fillStyle = '#1a1a2e';
     ctx.fillRect(x, y, sw, sh);
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(spriteSheet, i * SPR_W, 0, SPR_W, SPR_H, x, y, sw, sh);
     ctx.font = '7px "Press Start 2P", monospace';
-    ctx.fillStyle = '#7a7a8a';
-    ctx.textAlign = 'left';
-    ctx.fillText(labels[i], x, y + sh + 10);
+    ctx.fillStyle = '#7a7a8a'; ctx.textAlign = 'left';
+    ctx.fillText(hbLabels[i], x, y + sh + 10);
+    x += sw + gap;
+  }
+  // Row 2: N-Strokes (frames 5-8)
+  x = 8; y += sh + 24;
+  const nsLabels = ['Front','Back','Idle','Kneel'];
+  ctx.font = '8px "Press Start 2P", monospace';
+  ctx.fillStyle = '#3a7a3a'; ctx.textAlign = 'left';
+  ctx.fillText('N-STROKES', x, y - 4);
+  for (let i = 0; i < 4; i++) {
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(x, y, sw, sh);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(spriteSheet, (5 + i) * SPR_W, 0, SPR_W, SPR_H, x, y, sw, sh);
+    ctx.font = '7px "Press Start 2P", monospace';
+    ctx.fillStyle = '#7a7a8a'; ctx.textAlign = 'left';
+    ctx.fillText(nsLabels[i], x, y + sh + 10);
     x += sw + gap;
   }
   ctx.font = '8px "Press Start 2P", monospace';
