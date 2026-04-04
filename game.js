@@ -328,6 +328,7 @@ const popup = {
   isLocked: false, // true when showing locked-out message
   isWire: false,   // true when wire puzzle is active
   isImage: false,  // true when showing full-screen image
+  isBeastChat: false, // true when beast cell image + dialogue
   isWordleViz: false, // true when Wordle visualizer is open
   isDoorMenu: false,  // true when showing door option menu
 };
@@ -612,6 +613,17 @@ window.addEventListener('keydown', e => {
       if (PUZZLE_DOOR.wordleSolved || PUZZLE_DOOR.wordleLocked) { closePopup(); return; }
       return; // on page 1 unsolved, space does nothing (use Enter)
     }
+    if (popup.open && popup.isBeastChat) {
+      if (popup.beastChatIndex < popup.beastChatLines.length - 1) {
+        popup.beastChatIndex++;
+      } else {
+        WIRE.stage = 11;
+        closePopup();
+        const code = getStateCode();
+        if (code) setTimeout(() => flashCode(code), 500);
+      }
+      return;
+    }
     if (popup.open && popup.isImage) { closePopup(); return; }
     if (popup.open && popup.isWordleViz) return;
     if (popup.open && popup.isDoorMenu) {
@@ -814,6 +826,23 @@ async function submitDoorAnswer() {
 }
 
 function openBeastVent() {
+  if (WIRE.stage >= 11) {
+    // After beast chat completed — show beast_cell image again
+    popup.open = true; popup.isImage = true;
+    popup.imageOverride = beastCellImg;
+    return;
+  }
+  if (WIRE.stage === 10) {
+    // N-Strokes told us to go look — beast cell chat cutscene
+    popup.open = true; popup.isBeastChat = true;
+    popup.beastChatLines = [
+      { speaker: 'The Beast', text: '"Who\'s there?"' },
+      { speaker: 'Harry Bonds', text: '"Hi, my name is Harry Bonds."' },
+      { speaker: 'The Beast', text: '"It is an absolute pleasure to meet you, Harry Bonds."' },
+    ];
+    popup.beastChatIndex = 0;
+    return;
+  }
   if (WIRE.stage === 9) {
     // Show the beast_vent image
     popup.open = true; popup.isImage = true;
@@ -862,6 +891,14 @@ function openVentPopup() {
       { speaker: 'N-Strokes', text: '"The Beast! I\'d forgotten! He can help us!"' },
       { speaker: 'Harry Bonds', text: '"No, you don\'t get it. He just left."' },
       { speaker: 'N-Strokes', text: '"Not the big oaf that wandered out \u2014 the BEAST! Go look again."' },
+    ];
+  } else if (WIRE.stage === 9 && wordleTeach.phase >= 3) {
+    // After beast computer discovered + anger solved — tell Harry about the Beast
+    popup.ventPages = [
+      { speaker: 'N-Strokes', text: '"So, you found The Beast, did you?"' },
+      { speaker: 'N-Strokes', text: '"You know, that little guy is a fearsome calculator. He can help you solve your problem."' },
+      { speaker: 'Harry Bonds', text: '"The Wordle problem?"' },
+      { speaker: 'N-Strokes', text: '"Yup. You just have to talk to him. Go back over there and stick your eyes right up to the vent so he can get a good look at you."' },
     ];
   } else if (doorViewed && wordleTeach.phase === 0) {
     // Wordle teaching Phase 1-2: explaining patterns
@@ -1126,6 +1163,7 @@ function closePopup() {
   if (popup.isVent && popup.ventPages && popup.ventPage >= popup.ventPages.length - 1) {
     if (WIRE.stage === 2) WIRE.stage = 4;
     if (WIRE.stage === 7) WIRE.stage = 8;
+    if (WIRE.stage === 9 && wordleTeach.phase >= 3 && popup.ventPages && popup.ventPages.length === 4) WIRE.stage = 10;
     if (wordleTeach.phase === 0 && doorViewed && popup.ventPages.length > 10) wordleTeach.phase = 1;
     if (!nstrokesExplainedSaves && !STATIONS[0].solved && popup.ventPages) nstrokesExplainedSaves = true;
   }
@@ -1144,6 +1182,8 @@ function closePopup() {
   popup.isLocked = false;
   popup.isWire = false;
   popup.isImage = false;
+  popup.isBeastChat = false;
+  popup.imageOverride = null;
   popup.isWordleViz = false;
   popup.isDoorMenu = false;
   popup.pendingCodeFlash = false;
@@ -1234,6 +1274,9 @@ const canvas = document.getElementById('game');
 // Preload beast vent image
 const beastVentImg = new Image();
 beastVentImg.src = 'assets/beast_vent.jpg';
+
+const beastCellImg = new Image();
+beastCellImg.src = 'assets/beast_cell.png';
 const ctx = canvas.getContext('2d');
 canvas.width = W;
 canvas.height = H;
@@ -1553,20 +1596,56 @@ const POP = {
 
 function drawPopup() {
   if (!popup.open) return;
-  if (!popup.station && !popup.isVent && !popup.isLocked && !popup.isWire && !popup.isImage && !popup.isWordleViz && !popup.isDoorMenu) return;
+  if (!popup.station && !popup.isVent && !popup.isLocked && !popup.isWire && !popup.isImage && !popup.isBeastChat && !popup.isWordleViz && !popup.isDoorMenu) return;
 
-  // Full-screen image view
-  if (popup.isImage) {
+  // Beast cell chat cutscene — image + space-controlled dialogue
+  if (popup.isBeastChat) {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
-    if (beastVentImg.complete && beastVentImg.naturalWidth > 0) {
-      // Scale image to fit canvas while maintaining aspect ratio
-      const imgAsp = beastVentImg.naturalWidth / beastVentImg.naturalHeight;
+    if (beastCellImg.complete && beastCellImg.naturalWidth > 0) {
+      const imgAsp = beastCellImg.naturalWidth / beastCellImg.naturalHeight;
       const canAsp = W / H;
       let dw, dh;
       if (imgAsp > canAsp) { dw = W; dh = W / imgAsp; }
       else { dh = H; dw = H * imgAsp; }
-      ctx.drawImage(beastVentImg, (W - dw) / 2, (H - dh) / 2, dw, dh);
+      ctx.drawImage(beastCellImg, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    }
+    // Dialogue bar at bottom
+    const line = popup.beastChatLines[popup.beastChatIndex];
+    if (line) {
+      ctx.fillStyle = 'rgba(0,0,0,0.8)';
+      ctx.fillRect(0, H - 52, W, 52);
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.font = '8px "Press Start 2P", monospace';
+      ctx.fillStyle = line.speaker === 'The Beast' ? '#c0392b' : '#e0c080';
+      ctx.fillText(line.speaker, W / 2, H - 38);
+      ctx.font = '8px "Press Start 2P", monospace';
+      ctx.fillStyle = '#ecf0f1';
+      wrapText(line.text, W / 2, H - 20, W - 40, 14);
+      ctx.restore();
+    }
+    ctx.save();
+    ctx.font = '7px "Press Start 2P", monospace';
+    ctx.fillStyle = 'rgba(150,150,150,0.5)';
+    ctx.textAlign = 'center';
+    ctx.fillText('[SPACE]', W / 2, H - 2);
+    ctx.restore();
+    return;
+  }
+
+  // Full-screen image view
+  if (popup.isImage) {
+    const imgSrc = popup.imageOverride || beastVentImg;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+    if (imgSrc.complete && imgSrc.naturalWidth > 0) {
+      const imgAsp = imgSrc.naturalWidth / imgSrc.naturalHeight;
+      const canAsp = W / H;
+      let dw, dh;
+      if (imgAsp > canAsp) { dw = W; dh = W / imgAsp; }
+      else { dh = H; dw = H * imgAsp; }
+      ctx.drawImage(imgSrc, (W - dw) / 2, (H - dh) / 2, dw, dh);
     }
     ctx.save();
     ctx.font = '8px "Press Start 2P", monospace';
