@@ -2052,7 +2052,7 @@ let walkTimer = 0;
 
 function drawPlayer() {
   walkTimer++;
-  if (walkTimer > 8) { walkTimer = 0; walkFrame = 1 - walkFrame; }
+  if (walkTimer > 10) { walkTimer = 0; walkFrame = 1 - walkFrame; }
   const moving = keys['ArrowUp'] || keys['ArrowDown'] || keys['ArrowLeft'] || keys['ArrowRight']
               || keys['w'] || keys['s'] || keys['a'] || keys['d'];
   if (!moving) walkFrame = 0;
