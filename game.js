@@ -309,7 +309,7 @@ const player = {
   x: 13 * TILE,
   y: 7 * TILE,
   size: 20,
-  speed: 3,
+  speed: 2,
 };
 
 // Popup state
