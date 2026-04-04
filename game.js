@@ -13,16 +13,13 @@ const H = ROWS * TILE;
 // 6=ns_front, 7=ns_back, 8=ns_idle, 9=ns_kneel
 const SPR_W = 32, SPR_H = 48;
 const spriteSheet = new Image();
-spriteSheet.src = 'assets/sprites.png?v=4';
+spriteSheet.src = 'assets/sprites.png?v=5';
 
-// Frame indices in sheet (14 frames)
+// Frame indices in sheet (9 frames)
 const SF = {
   HB_FRONT: 0, HB_FRONT_WALK: 1,
-  HB_BACK: 2, HB_BACK_WALK: 3,
-  HB_LEFT: 4, HB_LEFT_WALK: 5,
-  HB_RIGHT: 6, HB_RIGHT_WALK: 7,
-  HB_IDLE: 8, HB_WALK: 9,
-  NS_FRONT: 10, NS_BACK: 11, NS_IDLE: 12, NS_KNEEL: 13,
+  HB_BACK: 2, HB_LEFT: 3, HB_RIGHT: 4,
+  NS_FRONT: 5, NS_BACK: 6, NS_IDLE: 7, NS_KNEEL: 8,
 };
 
 // Harry Bonds frames — 16×24, character fills 10-12 cols wide
@@ -44,9 +41,9 @@ function drawSpriteTest() {
   const zoom = 4;
   const sw = SPR_W * zoom, sh = SPR_H * zoom, gap = 8;
   let x = 10, y = 30;
-  const labels = ['HB Front','HB Back','HB Left','HB Right','HB Idle','HB Walk',
+  const labels = ['HB Front','HB FrontWalk','HB Back','HB Left','HB Right',
                   'NS Front','NS Back','NS Idle','NS Kneel'];
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 9; i++) {
     if (x + sw > W - 10) { x = 10; y += sh + 24; }
     ctx.fillStyle = '#1a1a2e';
     ctx.fillRect(x, y, sw, sh);
@@ -2043,18 +2040,21 @@ function drawPlayer() {
               || keys['w'] || keys['s'] || keys['a'] || keys['d'];
   if (!moving) walkFrame = 0;
 
-  // Pick frame from sprite sheet based on facing + walk
-  const dirFrames = {
-    down:  [SF.HB_FRONT, SF.HB_FRONT_WALK],
-    up:    [SF.HB_BACK, SF.HB_BACK_WALK],
-    left:  [SF.HB_RIGHT, SF.HB_RIGHT_WALK],
-    right: [SF.HB_LEFT, SF.HB_LEFT_WALK],
+  // Pick frame: down has 2 real frames, others use single frame + bob
+  const dirFrame = {
+    down:  SF.HB_FRONT,
+    up:    SF.HB_BACK,
+    left:  SF.HB_RIGHT,
+    right: SF.HB_LEFT,
   };
-  const pair = dirFrames[facing] || dirFrames.down;
-  const fi = moving ? pair[walkFrame] : pair[0];
-  // Center sprite on tile (32×48 sprite, 32×32 tile)
-  const sx = player.x;
-  const sy = player.y - (SPR_H - TILE) / 2;
+  let fi = dirFrame[facing] || SF.HB_FRONT;
+  // Down direction: alternate between front and front_walk sprites
+  if (facing === 'down' && moving && walkFrame === 1) fi = SF.HB_FRONT_WALK;
+  // Walk effect: vertical bob + horizontal sway for non-down directions
+  const bobOffset = (moving && walkFrame === 1) ? -1 : 0;
+  const swayOffset = (facing !== 'down' && moving && walkFrame === 1) ? 1 : 0;
+  const sx = player.x + swayOffset;
+  const sy = player.y - (SPR_H - TILE) / 2 + bobOffset;
   drawSpriteFrame(fi, sx, sy);
 }
 
