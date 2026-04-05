@@ -35,10 +35,8 @@ const Bootcamp = {
     if (this.onComplete) this.onComplete(this.currentLesson);
   },
 
-  // --- Shared UI ---
-
   COLORS: ['green', 'yellow', 'gray'],
-  HEX: { green: '#6aaa64', yellow: '#c9b458', gray: '#787c7e', empty: '#ddd', highlight: '#333' },
+  HEX: { green: '#6aaa64', yellow: '#c9b458', gray: '#787c7e', empty: '#ddd' },
 
   makeDialogueBar(speaker, text, speakerColor) {
     const bar = document.createElement('div');
@@ -68,7 +66,7 @@ const Bootcamp = {
 
   makeAnswerBox(correctAnswer, onCorrect) {
     const wrap = document.createElement('div');
-    wrap.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-top: 12px;';
+    wrap.style.cssText = 'display: flex; align-items: center; gap: 8px;';
     const input = document.createElement('input');
     input.type = 'text';
     input.placeholder = '?';
@@ -109,11 +107,9 @@ const Bootcamp = {
     tile.style.cssText = `
       width: ${size}px; height: ${size}px; border-radius: 4px;
       background: ${this.HEX[tile.dataset.color]};
-      cursor: pointer; transition: background 0.15s, transform 0.1s, width 0.4s, height 0.4s;
+      cursor: pointer; transition: background 0.15s;
       border: 2px solid rgba(0,0,0,0.1); flex-shrink: 0;
     `;
-    tile.addEventListener('mouseenter', () => { tile.style.transform = 'scale(1.05)'; });
-    tile.addEventListener('mouseleave', () => { tile.style.transform = 'scale(1)'; });
     tile.addEventListener('click', () => {
       const order = this.COLORS;
       const cur = tile.dataset.color;
@@ -125,15 +121,19 @@ const Bootcamp = {
     return tile;
   },
 
+  // Dot with FIXED size — highlight uses outline, not border, so no layout shift
   makeDot(size, color) {
     const dot = document.createElement('div');
+    const c = color || 'empty';
     dot.style.cssText = `
       width: ${size}px; height: ${size}px; border-radius: 50%;
-      background: ${this.HEX[color] || this.HEX.empty};
-      border: 2px solid ${color === 'empty' ? '#bbb' : 'rgba(0,0,0,0.15)'};
-      transition: all 0.25s; flex-shrink: 0;
+      background: ${this.HEX[c] || this.HEX.empty};
+      border: 1px solid ${c === 'empty' ? '#bbb' : 'rgba(0,0,0,0.15)'};
+      outline: 2px solid transparent; outline-offset: 2px;
+      transition: background 0.25s, outline-color 0.15s;
+      flex-shrink: 0; box-sizing: content-box;
     `;
-    dot.dataset.color = color || 'empty';
+    dot.dataset.color = c;
     return dot;
   },
 
@@ -143,14 +143,13 @@ const Bootcamp = {
     dot.style.borderColor = color === 'empty' ? '#bbb' : 'rgba(0,0,0,0.15)';
   },
 
+  // Highlight uses outline — NO layout shift
   highlightDot(dot, on) {
-    dot.style.borderColor = on ? '#333' : (dot.dataset.color === 'empty' ? '#bbb' : 'rgba(0,0,0,0.15)');
-    dot.style.borderWidth = on ? '3px' : '2px';
+    dot.style.outlineColor = on ? '#e67e22' : 'transparent';
   },
 };
 
 // ========== LESSONS ==========
-
 const LESSONS = {};
 
 // --- Lesson 1: Single square ---
@@ -173,10 +172,9 @@ LESSONS['single-square'] = {
     hint.style.cssText = 'font-size: 13px; color: #888;';
     main.appendChild(hint);
 
-    // Dots row (hidden initially)
     const dotRow = document.createElement('div');
-    dotRow.style.cssText = 'display: flex; gap: 10px; opacity: 0; transition: opacity 0.4s;';
-    const dots = [bc.makeDot(22, 'empty'), bc.makeDot(22, 'empty'), bc.makeDot(22, 'empty')];
+    dotRow.style.cssText = 'display: flex; gap: 14px; opacity: 0; transition: opacity 0.4s;';
+    const dots = [bc.makeDot(24, 'empty'), bc.makeDot(24, 'empty'), bc.makeDot(24, 'empty')];
     dots.forEach(d => dotRow.appendChild(d));
 
     let clicks = 0;
@@ -189,7 +187,9 @@ LESSONS['single-square'] = {
         }
         bc.colorDot(dots[clicks - 1], prevColor);
         if (clicks < 3) bc.highlightDot(dots[clicks], true);
+        if (clicks > 1) bc.highlightDot(dots[clicks - 2], false);
         if (clicks === 3) {
+          bc.highlightDot(dots[2], false);
           hint.textContent = 'How many possible colors?';
           ansWrap.style.display = 'flex';
         }
@@ -201,267 +201,196 @@ LESSONS['single-square'] = {
     const ansWrap = document.createElement('div');
     ansWrap.style.display = 'none';
     ansWrap.appendChild(bc.makeAnswerBox(3, () => {
-      LESSONS['two-squares'].start(container, bc);
+      startNTileLesson(container, bc, 2);
     }));
     main.appendChild(ansWrap);
   }
 };
 
-// --- Lesson 2: Two squares ---
-LESSONS['two-squares'] = {
-  start(container, bc) {
-    container.innerHTML = '';
-    const dialogue = bc.makeDialogueBar('Carol B',
-      '"OK, great. You got the warm-up. Big whoop. Now, how many different ways are there to color two Wordle squares, Mr. Smarty Pants?"', '#e090d0');
-    container.appendChild(dialogue);
+// --- Generic N-tile lesson ---
+function startNTileLesson(container, bc, N) {
+  container.innerHTML = '';
 
-    const main = document.createElement('div');
-    main.style.cssText = `
-      flex: 1; display: flex; flex-direction: column; align-items: center;
-      gap: 14px; padding: 20px; overflow-y: auto;
-    `;
-    container.appendChild(main);
+  const prompts = {
+    2: '"OK, great. You got the warm-up. Big whoop. Now, how many different ways are there to color TWO Wordle squares, Mr. Smarty Pants?"',
+    3: '"Now we\'re cooking. How many ways to color THREE squares? Think about it."',
+    4: '"Four squares now. You seeing the pattern yet?"',
+    5: '"Five squares. That\'s a full Wordle row. How many possible patterns?"',
+  };
 
-    // Two tiles at top
-    const tileRow = document.createElement('div');
-    tileRow.style.cssText = 'display: flex; gap: 6px; align-items: center;';
+  const dialogue = bc.makeDialogueBar('Carol B', prompts[N] || `"How many ways to color ${N} squares?"`, '#e090d0');
+  container.appendChild(dialogue);
 
-    // Build tree data: 3 branches × 3 leaves = 9 paths
-    const C = bc.COLORS;
-    const treeDots = []; // [branch][leaf] dot elements
-    const branchParents = []; // parent dots
+  const main = document.createElement('div');
+  main.style.cssText = `
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    gap: 10px; padding: 16px; overflow-y: auto;
+  `;
+  container.appendChild(main);
 
-    // Tree container
-    const tree = document.createElement('div');
-    tree.style.cssText = 'display: flex; gap: 24px; justify-content: center; margin: 8px 0;';
-
-    for (let i = 0; i < 3; i++) {
-      const col = document.createElement('div');
-      col.style.cssText = 'display: flex; flex-direction: column; align-items: center; gap: 6px;';
-      const parent = bc.makeDot(18, 'empty');
-      branchParents.push(parent);
-      col.appendChild(parent);
-      const line = document.createElement('div');
-      line.style.cssText = 'width: 1px; height: 10px; background: #ccc;';
-      col.appendChild(line);
-      const kids = document.createElement('div');
-      kids.style.cssText = 'display: flex; gap: 5px;';
-      const row = [];
-      for (let j = 0; j < 3; j++) {
-        const d = bc.makeDot(12, 'empty');
-        row.push(d);
-        kids.appendChild(d);
-      }
-      treeDots.push(row);
-      col.appendChild(kids);
-      tree.appendChild(col);
-    }
-
-    // Track which combos have been visited
-    const visited = new Set();
-    let totalVisited = 0;
-
-    function getComboKey(c1, c2) { return c1 + ',' + c2; }
-
-    function updateTree(color1, color2) {
-      const i1 = C.indexOf(color1);
-      const i2 = C.indexOf(color2);
-      const key = getComboKey(color1, color2);
-
-      // Color the visited combo
-      if (!visited.has(key)) {
-        visited.add(key);
-        totalVisited++;
-        bc.colorDot(branchParents[i1], color1);
-        bc.colorDot(treeDots[i1][i2], color2);
-      }
-
-      // Highlight current path
-      for (let b = 0; b < 3; b++) {
-        bc.highlightDot(branchParents[b], b === i1);
-        for (let l = 0; l < 3; l++) {
-          bc.highlightDot(treeDots[b][l], b === i1 && l === i2);
-        }
-      }
-
-      countLabel.textContent = `${totalVisited} of 9 combinations found`;
-      if (totalVisited >= 9 && ansWrap.style.display === 'none') {
-        ansWrap.style.display = 'flex';
-      }
-    }
-
-    let cur1 = 'green', cur2 = 'green';
-    const tile1 = bc.makeTile(44, 'green', (next, prev) => {
-      cur1 = next;
-      updateTree(cur1, cur2);
+  // Tiles row — fixed position/size
+  const tileRow = document.createElement('div');
+  tileRow.style.cssText = 'display: flex; gap: 6px; flex-shrink: 0;';
+  const curColors = [];
+  const tiles = [];
+  for (let t = 0; t < N; t++) {
+    curColors.push('green');
+    const idx = t;
+    const tile = bc.makeTile(40, 'green', (next) => {
+      curColors[idx] = next;
+      updateTree();
     });
-    const tile2 = bc.makeTile(44, 'green', (next, prev) => {
-      cur2 = next;
-      updateTree(cur1, cur2);
-    });
-    tileRow.appendChild(tile1);
-    tileRow.appendChild(tile2);
-    main.appendChild(tileRow);
-    main.appendChild(tree);
-
-    const countLabel = document.createElement('div');
-    countLabel.textContent = '0 of 9 combinations found';
-    countLabel.style.cssText = 'font-size: 12px; color: #888;';
-    main.appendChild(countLabel);
-
-    // Initialize highlight
-    updateTree('green', 'green');
-
-    const hint = document.createElement('div');
-    hint.textContent = 'Click the tiles to cycle colors. Find all 9 combinations.';
-    hint.style.cssText = 'font-size: 12px; color: #aaa;';
-    main.appendChild(hint);
-
-    const ansWrap = document.createElement('div');
-    ansWrap.style.display = 'none';
-    ansWrap.appendChild(bc.makeAnswerBox(9, () => {
-      LESSONS['three-squares'].start(container, bc);
-    }));
-    main.appendChild(ansWrap);
+    tiles.push(tile);
+    tileRow.appendChild(tile);
   }
-};
+  main.appendChild(tileRow);
 
-// --- Lesson 3: Three squares ---
-LESSONS['three-squares'] = {
-  start(container, bc) {
-    container.innerHTML = '';
-    const dialogue = bc.makeDialogueBar('Carol B',
-      '"Now we\'re cooking. How many ways to color THREE squares? Think about it."', '#e090d0');
-    container.appendChild(dialogue);
+  // Build tree
+  const C = bc.COLORS;
+  const total = Math.pow(3, N);
 
-    const main = document.createElement('div');
-    main.style.cssText = `
-      flex: 1; display: flex; flex-direction: column; align-items: center;
-      gap: 12px; padding: 16px; overflow-y: auto;
-    `;
-    container.appendChild(main);
+  // Tree layout: each level adds branching
+  // We render as a grid of dots at each level, horizontally distributed
+  const treeWrap = document.createElement('div');
+  treeWrap.style.cssText = `
+    display: flex; flex-direction: column; align-items: center;
+    gap: 8px; flex-shrink: 0; margin: 8px 0;
+  `;
 
-    // Three tiles
-    const tileRow = document.createElement('div');
-    tileRow.style.cssText = 'display: flex; gap: 6px;';
+  // Dot sizes decrease with depth, spacing decreases with N
+  const dotSizes = {
+    1: [20],
+    2: [16, 12],
+    3: [14, 10, 7],
+    4: [12, 9, 6, 5],
+    5: [10, 8, 6, 5, 4],
+  };
+  const sizes = dotSizes[N] || new Array(N).fill(5);
 
-    const C = bc.COLORS;
-    // Tree: 3 × 3 × 3 = 27
-    // Level 1: 3 dots, Level 2: 9 dots (3 per L1), Level 3: 27 dots (3 per L2)
-    const tree = document.createElement('div');
-    tree.style.cssText = 'display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin: 6px 0;';
+  // Gaps between dots at each level
+  const gapSizes = {
+    1: [30],
+    2: [40, 8],
+    3: [24, 6, 3],
+    4: [16, 4, 2, 1],
+    5: [10, 3, 1, 1, 0],
+  };
+  const gaps = gapSizes[N] || new Array(N).fill(2);
 
-    const L1dots = [];
-    const L2dots = []; // [i][j]
-    const L3dots = []; // [i][j][k]
+  // Group gaps (space between groups at each level)
+  const groupGaps = {
+    1: [0],
+    2: [30, 0],
+    3: [20, 8, 0],
+    4: [14, 6, 3, 0],
+    5: [8, 4, 2, 1, 0],
+  };
+  const gGaps = groupGaps[N] || new Array(N).fill(0);
 
-    for (let i = 0; i < 3; i++) {
-      const branch = document.createElement('div');
-      branch.style.cssText = 'display: flex; flex-direction: column; align-items: center; gap: 4px;';
-      const d1 = bc.makeDot(14, 'empty');
-      L1dots.push(d1);
-      branch.appendChild(d1);
+  // Create all dots organized by level
+  // allDots[level] = array of dots, length = 3^(level+1)
+  const allDots = [];
+  for (let level = 0; level < N; level++) {
+    const count = Math.pow(3, level + 1);
+    const row = document.createElement('div');
+    row.style.cssText = `display: flex; align-items: center; justify-content: center; flex-shrink: 0;`;
+    const dotsAtLevel = [];
+    for (let i = 0; i < count; i++) {
+      const dot = bc.makeDot(sizes[level], 'empty');
+      dotsAtLevel.push(dot);
+      row.appendChild(dot);
 
-      const line1 = document.createElement('div');
-      line1.style.cssText = 'width: 1px; height: 6px; background: #ccc;';
-      branch.appendChild(line1);
-
-      const mid = document.createElement('div');
-      mid.style.cssText = 'display: flex; gap: 10px;';
-      L2dots.push([]);
-      L3dots.push([]);
-
-      for (let j = 0; j < 3; j++) {
-        const sub = document.createElement('div');
-        sub.style.cssText = 'display: flex; flex-direction: column; align-items: center; gap: 3px;';
-        const d2 = bc.makeDot(10, 'empty');
-        L2dots[i].push(d2);
-        sub.appendChild(d2);
-
-        const line2 = document.createElement('div');
-        line2.style.cssText = 'width: 1px; height: 4px; background: #ddd;';
-        sub.appendChild(line2);
-
-        const leaves = document.createElement('div');
-        leaves.style.cssText = 'display: flex; gap: 3px;';
-        L3dots[i].push([]);
-        for (let k = 0; k < 3; k++) {
-          const d3 = bc.makeDot(7, 'empty');
-          L3dots[i][j].push(d3);
-          leaves.appendChild(d3);
-        }
-        sub.appendChild(leaves);
-        mid.appendChild(sub);
-      }
-      branch.appendChild(mid);
-      tree.appendChild(branch);
-    }
-
-    const visited = new Set();
-    let totalVisited = 0;
-
-    function updateTree(c1, c2, c3) {
-      const i = C.indexOf(c1), j = C.indexOf(c2), k = C.indexOf(c3);
-      const key = `${c1},${c2},${c3}`;
-      if (!visited.has(key)) {
-        visited.add(key);
-        totalVisited++;
-        bc.colorDot(L1dots[i], c1);
-        bc.colorDot(L2dots[i][j], c2);
-        bc.colorDot(L3dots[i][j][k], c3);
-      }
-      // Highlight current path
-      for (let a = 0; a < 3; a++) {
-        bc.highlightDot(L1dots[a], a === i);
-        for (let b = 0; b < 3; b++) {
-          bc.highlightDot(L2dots[a][b], a === i && b === j);
-          for (let c = 0; c < 3; c++) {
-            bc.highlightDot(L3dots[a][b][c], a === i && b === j && c === k);
+      // Add gap after each dot
+      if (i < count - 1) {
+        // Determine spacing: within group vs between groups
+        const groupSize = Math.pow(3, level + 1 - (level)); // not used; simpler approach below
+        // Every 3^(level) dots we need a bigger gap for grouping at parent level
+        let gapPx = gaps[level];
+        // Check all parent group boundaries
+        for (let g = level; g >= 0; g--) {
+          const groupLen = Math.pow(3, level + 1 - g);
+          if ((i + 1) % groupLen === 0) {
+            gapPx = Math.max(gapPx, gGaps[g] + gaps[level]);
+            break;
           }
         }
-      }
-      countLabel.textContent = `${totalVisited} of 27 combinations found`;
-      if (totalVisited >= 27 && ansWrap.style.display === 'none') {
-        ansWrap.style.display = 'flex';
+        const spacer = document.createElement('div');
+        spacer.style.cssText = `width: ${gapPx}px; flex-shrink: 0;`;
+        row.appendChild(spacer);
       }
     }
-
-    let cur = ['green', 'green', 'green'];
-    const tiles = [];
-    for (let t = 0; t < 3; t++) {
-      const idx = t;
-      const tile = bc.makeTile(40, 'green', (next) => {
-        cur[idx] = next;
-        updateTree(cur[0], cur[1], cur[2]);
-      });
-      tiles.push(tile);
-      tileRow.appendChild(tile);
-    }
-    main.appendChild(tileRow);
-    main.appendChild(tree);
-
-    const countLabel = document.createElement('div');
-    countLabel.textContent = '0 of 27 combinations found';
-    countLabel.style.cssText = 'font-size: 12px; color: #888;';
-    main.appendChild(countLabel);
-
-    const hint = document.createElement('div');
-    hint.textContent = 'Click tiles to cycle. Find all 27 combinations — or just figure out the pattern!';
-    hint.style.cssText = 'font-size: 12px; color: #aaa;';
-    main.appendChild(hint);
-
-    const ansWrap = document.createElement('div');
-    ansWrap.style.display = 'none';
-    // Allow answer even before finding all 27
-    ansWrap.style.display = 'flex';
-    ansWrap.appendChild(bc.makeAnswerBox(27, () => {
-      bc.setDialogue(dialogue, 'Carol B',
-        '"3 × 3 × 3 = 27. See the pattern? Every square you add multiplies by 3. Now you\'re thinking like a Wordle player."',
-        '#e090d0');
-      setTimeout(() => bc.hide(), 3000);
-    }));
-    main.appendChild(ansWrap);
-
-    updateTree('green', 'green', 'green');
+    allDots.push(dotsAtLevel);
+    treeWrap.appendChild(row);
   }
-};
+  main.appendChild(treeWrap);
+
+  // Tracking
+  const visited = new Set();
+  let totalVisited = 0;
+
+  const countLabel = document.createElement('div');
+  countLabel.textContent = '0 combinations found';
+  countLabel.style.cssText = 'font-size: 12px; color: #888; flex-shrink: 0;';
+  main.appendChild(countLabel);
+
+  const hint = document.createElement('div');
+  hint.textContent = 'Click tiles to cycle. Find all combinations \u2014 or just figure out the pattern!';
+  hint.style.cssText = 'font-size: 11px; color: #aaa; flex-shrink: 0;';
+  main.appendChild(hint);
+
+  // Answer box — always visible
+  const ansWrap = document.createElement('div');
+  ansWrap.style.cssText = 'flex-shrink: 0; margin-top: 4px;';
+  ansWrap.appendChild(bc.makeAnswerBox(total, () => {
+    if (N < 5) {
+      startNTileLesson(container, bc, N + 1);
+    } else {
+      bc.setDialogue(dialogue, 'Carol B',
+        '"3 \u00d7 3 \u00d7 3 \u00d7 3 \u00d7 3 = 243. A five-letter Wordle has 243 possible patterns. Now you\'re thinking like a Wordle player."',
+        '#e090d0');
+      setTimeout(() => bc.hide(), 4000);
+    }
+  }));
+  main.appendChild(ansWrap);
+
+  function getPathIndex(colors) {
+    // Convert array of color names to flat index in the tree
+    // colors[0] picks branch (0-2), colors[1] picks sub-branch, etc.
+    // At level L, the dot index = sum of colors[0..L] * 3^(L-i)
+    const indices = [];
+    for (let level = 0; level < N; level++) {
+      let idx = 0;
+      for (let i = 0; i <= level; i++) {
+        idx += C.indexOf(colors[i]) * Math.pow(3, level - i);
+      }
+      indices.push(idx);
+    }
+    return indices;
+  }
+
+  function updateTree() {
+    const key = curColors.join(',');
+    const pathIndices = getPathIndex(curColors);
+
+    if (!visited.has(key)) {
+      visited.add(key);
+      totalVisited++;
+      // Fill dots along this path
+      for (let level = 0; level < N; level++) {
+        bc.colorDot(allDots[level][pathIndices[level]], curColors[level]);
+      }
+      countLabel.textContent = `${totalVisited} combination${totalVisited !== 1 ? 's' : ''} found`;
+    }
+
+    // Highlight current path
+    for (let level = 0; level < N; level++) {
+      const count = allDots[level].length;
+      for (let i = 0; i < count; i++) {
+        bc.highlightDot(allDots[level][i], i === pathIndices[level]);
+      }
+    }
+  }
+
+  // Initial state
+  updateTree();
+}
