@@ -205,9 +205,10 @@ const PROMPTS = {
   1: '"Your first assignment: How many ways are there to color a single square in a Wordle pattern?"',
   2: '"OK, great. You got the warm-up. Big whoop. Now, how many different ways are there to color TWO Wordle squares, Mr. Smarty Pants?"',
   3: '"Now we\'re cooking. How many ways to color THREE squares? Think about it."',
+  4: '"Four squares now. You seeing the pattern yet?"',
 };
 
-const MAX_N = 3;
+const MAX_N = 4;
 let highestUnlocked = 1;
 let currentN = 1;
 let curColors = [];
@@ -303,9 +304,9 @@ function buildTree(N) {
   // Node radius — consistent within each lesson
   let nodeR;
   if (isMobile) {
-    nodeR = N === 1 ? 10 : N === 2 ? 7 : 5;
+    nodeR = N === 1 ? 10 : N === 2 ? 7 : N === 3 ? 5 : 3;
   } else {
-    nodeR = N === 1 ? 12 : N === 2 ? 10 : 8;
+    nodeR = N === 1 ? 12 : N === 2 ? 10 : N === 3 ? 8 : 4;
   }
 
   const ringGap = 4;
@@ -474,8 +475,11 @@ function submitAnswer() {
       highestUnlocked = Math.max(highestUnlocked, currentN + 1);
       setTimeout(() => startLesson(currentN + 1), 800);
     } else {
-      document.getElementById('dialogueText').textContent =
-        '"3 × 3 × 3 = 27. Every square you add multiplies by 3. Now you\'re thinking like a Wordle player."';
+      const msg = {
+        3: '"3 × 3 × 3 = 27. Every square you add multiplies by 3."',
+        4: '"3 × 3 × 3 × 3 = 81. See? Every new square triples the possibilities. Now you\'re thinking like a Wordle player."',
+      };
+      document.getElementById('dialogueText').textContent = msg[currentN] || '"Well done!"';
       // Notify parent game
       if (window.parent && window.parent.Bootcamp) {
         setTimeout(() => window.parent.Bootcamp.hide(), 3000);
