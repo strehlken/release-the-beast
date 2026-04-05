@@ -1,396 +1,392 @@
-// Wordle Bootcamp — DOM overlay teaching module
+// Wordle Bootcamp — DOM overlay, ported from index_3.html prototype
 
 const Bootcamp = {
   overlay: null,
   active: false,
   onComplete: null,
-  currentLesson: null,
 
   init() {
     if (this.overlay) return;
     const el = document.createElement('div');
     el.id = 'bootcamp-overlay';
-    el.style.cssText = `
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: #f5f5f0; color: #1a1a2a; font-family: 'Segoe UI', system-ui, sans-serif;
-      display: none; flex-direction: column; z-index: 10000; overflow-y: auto;
-    `;
+    Object.assign(el.style, {
+      position: 'fixed', top: '0', left: '0', width: '100%', height: '100%',
+      display: 'none', zIndex: '10000',
+    });
     document.body.appendChild(el);
     this.overlay = el;
   },
 
-  show(lessonId) {
+  show() {
     this.init();
-    this.overlay.style.display = 'flex';
-    this.overlay.innerHTML = '';
+    this.overlay.style.display = 'block';
     this.active = true;
-    this.currentLesson = lessonId;
-    const lesson = LESSONS[lessonId];
-    if (lesson) lesson.start(this.overlay, this);
+    startLesson(1);
   },
 
   hide() {
     if (this.overlay) this.overlay.style.display = 'none';
     this.active = false;
-    if (this.onComplete) this.onComplete(this.currentLesson);
+    if (this.onComplete) this.onComplete();
   },
+};
 
-  COLORS: ['green', 'yellow', 'gray'],
-  HEX: { green: '#6aaa64', yellow: '#c9b458', gray: '#787c7e', empty: '#ddd' },
+// ========== Engine (from index_3.html) ==========
 
-  makeDialogueBar(speaker, text, speakerColor) {
-    const bar = document.createElement('div');
-    bar.style.cssText = `
-      background: #2a2a3a; color: #eee; padding: 10px 16px;
-      font-size: 13px; line-height: 1.5; display: flex; align-items: flex-start; gap: 10px;
-      border-bottom: 2px solid #3a3a4a; flex-shrink: 0;
-    `;
-    const nameEl = document.createElement('span');
-    nameEl.textContent = speaker;
-    nameEl.style.cssText = `font-weight: bold; color: ${speakerColor || '#e090d0'}; white-space: nowrap;`;
-    const textEl = document.createElement('span');
-    textEl.textContent = text;
-    textEl.style.cssText = 'flex: 1;';
-    bar.appendChild(nameEl);
-    bar.appendChild(textEl);
-    bar._textEl = textEl;
-    bar._nameEl = nameEl;
-    return bar;
-  },
+const COLORS = ['green', 'yellow', 'gray'];
+const HEX = { green: '#6aaa64', yellow: '#c9b458', gray: '#787c7e', empty: '#ddd' };
+const STROKE = { green: '#5a9a54', yellow: '#b9a448', gray: '#686c6e', empty: '#bbb' };
 
-  setDialogue(bar, speaker, text, color) {
-    bar._nameEl.textContent = speaker;
-    if (color) bar._nameEl.style.color = color;
-    bar._textEl.textContent = text;
-  },
+const PROMPTS = {
+  1: '"Your first assignment: How many ways are there to color a single square in a Wordle pattern?"',
+  2: '"OK, great. You got the warm-up. Big whoop. Now, how many different ways are there to color TWO Wordle squares, Mr. Smarty Pants?"',
+  3: '"Now we\'re cooking. How many ways to color THREE squares? Think about it."',
+  4: '"Four squares now. You seeing the pattern yet?"',
+  5: '"Five squares. That\'s a full Wordle row. How many possible patterns?"',
+};
 
-  makeAnswerBox(correctAnswer, onCorrect) {
-    const wrap = document.createElement('div');
-    wrap.style.cssText = 'display: flex; align-items: center; gap: 8px;';
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.placeholder = '?';
-    input.style.cssText = `
-      width: 60px; padding: 6px 10px; font-size: 16px; text-align: center;
-      border: 2px solid #ccc; border-radius: 5px; outline: none;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-    `;
-    input.addEventListener('focus', () => { input.style.borderColor = '#6aaa64'; });
-    input.addEventListener('blur', () => { input.style.borderColor = '#ccc'; });
+const MAX_N = 5;
+let highestUnlocked = 1;
+let currentN = 1;
+let curColors = [];
+let visited = new Set();
+let totalVisited = 0;
+let nodes = [];
+let svgEl = null;
+let counterEl = null;
+let feedbackEl = null;
+
+function getApp() {
+  return Bootcamp.overlay;
+}
+
+function startLesson(N) {
+  if (N > highestUnlocked) return;
+  currentN = N;
+  curColors = Array(N).fill('green');
+  visited = new Set();
+  totalVisited = 0;
+  nodes = [];
+
+  const app = getApp();
+  app.innerHTML = `
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
+  #bootcamp-overlay * { margin: 0; padding: 0; box-sizing: border-box; }
+  .bootcamp {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background: #f5f4ef; color: #1a1a2a;
+    display: flex; flex-direction: column; height: 100vh;
+  }
+  .dialogue-bar {
+    background: #2a2a3a; color: #eee; padding: 12px 20px;
+    font-size: 17px; line-height: 1.5;
+    display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0; border-bottom: 3px solid #3a3a4a;
+  }
+  .dialogue-bar .speaker { font-weight: 700; color: #e090d0; white-space: nowrap; }
+  .controls-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px; flex-shrink: 0;
+    border-bottom: 1px solid #ddd; background: #f5f4ef;
+  }
+  .answer-group { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .answer-group input {
+    width: 58px; padding: 8px 10px; font-size: 18px; text-align: center;
+    border: 2px solid #ccc; border-radius: 6px; outline: none;
+    font-family: 'DM Sans', system-ui, sans-serif; color: #1a1a2a;
+  }
+  .answer-group input::placeholder { color: #bbb; font-style: italic; }
+  .answer-group input:focus { border-color: #6aaa64; }
+  .answer-group button {
+    padding: 8px 16px; font-size: 15px; cursor: pointer;
+    background: #e8e8e3; color: #444; border: 2px solid #ccc; border-radius: 6px;
+    font-family: 'DM Sans', system-ui, sans-serif; font-weight: 500;
+    transition: background 0.15s;
+  }
+  .answer-group button:hover { background: #ddd; }
+  .answer-group .feedback { font-size: 14px; min-width: 60px; }
+  .tiles-row { display: flex; justify-content: center; align-items: center; gap: 8px; }
+  .wordle-tile {
+    width: 48px; height: 48px; border-radius: 5px;
+    border: 2px solid rgba(0,0,0,0.12); cursor: pointer;
+    transition: background 0.15s; user-select: none;
+  }
+  .wordle-tile:hover { opacity: 0.85; }
+  .wordle-tile:active { transform: scale(0.95); }
+  .nav-group { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+  .nav-group .label { font-size: 13px; font-weight: 500; color: #888; white-space: nowrap; }
+  .nav-group button {
+    width: 32px; height: 32px; font-size: 14px; font-weight: 600;
+    border: 2px solid #ccc; border-radius: 50%; background: white; cursor: pointer;
+    font-family: 'DM Sans', system-ui, sans-serif; color: #555; transition: all 0.15s;
+  }
+  .nav-group button:hover:not(.locked) { border-color: #999; }
+  .nav-group button.active { background: #2a2a3a; color: white; border-color: #2a2a3a; }
+  .nav-group button.locked { opacity: 0.35; cursor: not-allowed; }
+  .tree-zone {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 12px 0; overflow: hidden;
+  }
+  .tree-zone svg { max-width: 100%; max-height: 100%; }
+  .bottom-zone {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    padding: 12px 0 16px; border-top: 1px solid #ddd; background: #f5f4ef;
+  }
+  .counter { font-size: 15px; color: #999; }
+  @media (max-width: 600px) {
+    .dialogue-bar { font-size: 14px; padding: 10px 14px; }
+    .controls-row { padding: 10px 12px; }
+    .wordle-tile { width: 36px; height: 36px; }
+    .answer-group input { width: 46px; font-size: 15px; padding: 6px 6px; }
+    .answer-group button { font-size: 13px; padding: 6px 10px; }
+    .nav-group .label { font-size: 11px; }
+    .nav-group button { width: 28px; height: 28px; font-size: 12px; }
+  }
+</style>
+<div class="bootcamp">
+  <div class="dialogue-bar">
+    <span class="speaker">Carol B</span>
+    <span id="dialogueText">${PROMPTS[N]}</span>
+  </div>
+  <div class="controls-row">
+    <div class="answer-group">
+      <input type="text" id="ansInput" placeholder="?">
+      <button id="ansBtn">Answer</button>
+      <span class="feedback" id="feedback"></span>
+    </div>
+    <div class="tiles-row" id="tilesRow"></div>
+    <div class="nav-group" id="navGroup">
+      <span class="label"># tiles:</span>
+    </div>
+  </div>
+  <div class="tree-zone" id="treeZone"></div>
+  <div class="bottom-zone">
+    <div class="counter" id="counter">0 combinations found</div>
+  </div>
+</div>`;
+
+  // Build nav buttons
+  const navGroup = app.querySelector('#navGroup');
+  for (let i = 1; i <= MAX_N; i++) {
     const btn = document.createElement('button');
-    btn.textContent = 'Go';
-    btn.style.cssText = `
-      padding: 6px 14px; font-size: 13px; cursor: pointer;
-      background: #6aaa64; color: white; border: none; border-radius: 5px;
-    `;
-    const fb = document.createElement('span');
-    fb.style.cssText = 'font-size: 13px;';
-    function submit() {
-      if (input.value.trim() === String(correctAnswer)) {
-        fb.textContent = 'Correct!'; fb.style.color = '#6aaa64';
-        input.disabled = true; btn.disabled = true;
-        if (onCorrect) setTimeout(onCorrect, 600);
-      } else {
-        fb.textContent = 'Try again.'; fb.style.color = '#c0392b';
-        input.value = ''; input.focus();
-      }
-    }
-    btn.addEventListener('click', submit);
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
-    wrap.appendChild(input); wrap.appendChild(btn); wrap.appendChild(fb);
-    return wrap;
-  },
-
-  makeTile(size, color, onClick) {
-    const tile = document.createElement('div');
-    tile.dataset.color = color || 'green';
-    tile.style.cssText = `
-      width: ${size}px; height: ${size}px; border-radius: 4px;
-      background: ${this.HEX[tile.dataset.color]};
-      cursor: pointer; transition: background 0.15s;
-      border: 2px solid rgba(0,0,0,0.1); flex-shrink: 0;
-    `;
-    tile.addEventListener('click', () => {
-      const order = this.COLORS;
-      const cur = tile.dataset.color;
-      const next = order[(order.indexOf(cur) + 1) % 3];
-      tile.dataset.color = next;
-      tile.style.background = this.HEX[next];
-      if (onClick) onClick(next, cur, tile);
+    btn.textContent = i;
+    btn.id = 'nav' + i;
+    if (i === N) btn.classList.add('active');
+    if (i > highestUnlocked) btn.classList.add('locked');
+    const level = i;
+    btn.addEventListener('click', () => {
+      if (level <= highestUnlocked) startLesson(level);
     });
-    return tile;
-  },
-
-  // Dot with FIXED size — highlight uses outline, not border, so no layout shift
-  makeDot(size, color) {
-    const dot = document.createElement('div');
-    const c = color || 'empty';
-    dot.style.cssText = `
-      width: ${size}px; height: ${size}px; border-radius: 50%;
-      background: ${this.HEX[c] || this.HEX.empty};
-      border: 1px solid ${c === 'empty' ? '#bbb' : 'rgba(0,0,0,0.15)'};
-      outline: 2px solid transparent; outline-offset: 2px;
-      transition: background 0.25s, outline-color 0.15s;
-      flex-shrink: 0; box-sizing: content-box;
-    `;
-    dot.dataset.color = c;
-    return dot;
-  },
-
-  colorDot(dot, color) {
-    dot.dataset.color = color;
-    dot.style.background = this.HEX[color] || this.HEX.empty;
-    dot.style.borderColor = color === 'empty' ? '#bbb' : 'rgba(0,0,0,0.15)';
-  },
-
-  // Highlight uses outline — NO layout shift
-  highlightDot(dot, on) {
-    dot.style.outlineColor = on ? '#e67e22' : 'transparent';
-  },
-};
-
-// ========== LESSONS ==========
-const LESSONS = {};
-
-// --- Lesson 1: Single square ---
-LESSONS['single-square'] = {
-  start(container, bc) {
-    container.innerHTML = '';
-    const dialogue = bc.makeDialogueBar('Carol B',
-      '"Your first assignment: How many ways are there to color a single square in a Wordle pattern?"', '#e090d0');
-    container.appendChild(dialogue);
-
-    const main = document.createElement('div');
-    main.style.cssText = `
-      flex: 1; display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: 16px; padding: 20px;
-    `;
-    container.appendChild(main);
-
-    const hint = document.createElement('div');
-    hint.textContent = 'Click the square to cycle its color';
-    hint.style.cssText = 'font-size: 13px; color: #888;';
-    main.appendChild(hint);
-
-    const dotRow = document.createElement('div');
-    dotRow.style.cssText = 'display: flex; gap: 14px; opacity: 0; transition: opacity 0.4s;';
-    const dots = [bc.makeDot(24, 'empty'), bc.makeDot(24, 'empty'), bc.makeDot(24, 'empty')];
-    dots.forEach(d => dotRow.appendChild(d));
-
-    let clicks = 0;
-    const tile = bc.makeTile(90, 'green', (nextColor, prevColor) => {
-      clicks++;
-      if (clicks <= 3) {
-        if (clicks === 1) {
-          dotRow.style.opacity = '1';
-          tile.style.width = '50px'; tile.style.height = '50px';
-        }
-        bc.colorDot(dots[clicks - 1], prevColor);
-        if (clicks < 3) bc.highlightDot(dots[clicks], true);
-        if (clicks > 1) bc.highlightDot(dots[clicks - 2], false);
-        if (clicks === 3) {
-          bc.highlightDot(dots[2], false);
-          hint.textContent = 'How many possible colors?';
-          ansWrap.style.display = 'flex';
-        }
-      }
-    });
-    main.appendChild(tile);
-    main.appendChild(dotRow);
-
-    const ansWrap = document.createElement('div');
-    ansWrap.style.display = 'none';
-    ansWrap.appendChild(bc.makeAnswerBox(3, () => {
-      startNTileLesson(container, bc, 2);
-    }));
-    main.appendChild(ansWrap);
+    navGroup.appendChild(btn);
   }
-};
 
-// --- Generic N-tile lesson ---
-function startNTileLesson(container, bc, N) {
-  container.innerHTML = '';
+  counterEl = app.querySelector('#counter');
+  feedbackEl = app.querySelector('#feedback');
 
-  const prompts = {
-    2: '"OK, great. You got the warm-up. Big whoop. Now, how many different ways are there to color TWO Wordle squares, Mr. Smarty Pants?"',
-    3: '"Now we\'re cooking. How many ways to color THREE squares? Think about it."',
-    4: '"Four squares now. You seeing the pattern yet?"',
-    5: '"Five squares. That\'s a full Wordle row. How many possible patterns?"',
-  };
-
-  const dialogue = bc.makeDialogueBar('Carol B', prompts[N] || `"How many ways to color ${N} squares?"`, '#e090d0');
-  container.appendChild(dialogue);
-
-  const main = document.createElement('div');
-  main.style.cssText = `
-    flex: 1; display: flex; flex-direction: column; align-items: center;
-    gap: 10px; padding: 16px; overflow-y: auto;
-  `;
-  container.appendChild(main);
-
-  // Tiles row — fixed position/size
-  const tileRow = document.createElement('div');
-  tileRow.style.cssText = 'display: flex; gap: 6px; flex-shrink: 0;';
-  const curColors = [];
-  const tiles = [];
+  // Build tiles
+  const tilesRow = app.querySelector('#tilesRow');
   for (let t = 0; t < N; t++) {
-    curColors.push('green');
+    const tile = document.createElement('div');
+    tile.className = 'wordle-tile';
+    tile.style.background = HEX.green;
+    tile.dataset.color = 'green';
     const idx = t;
-    const tile = bc.makeTile(40, 'green', (next) => {
-      curColors[idx] = next;
-      updateTree();
-    });
-    tiles.push(tile);
-    tileRow.appendChild(tile);
-  }
-  main.appendChild(tileRow);
-
-  // Build tree
-  const C = bc.COLORS;
-  const total = Math.pow(3, N);
-
-  // Tree layout: each level adds branching
-  // We render as a grid of dots at each level, horizontally distributed
-  const treeWrap = document.createElement('div');
-  treeWrap.style.cssText = `
-    display: flex; flex-direction: column; align-items: center;
-    gap: 8px; flex-shrink: 0; margin: 8px 0;
-  `;
-
-  // Dot sizes decrease with depth, spacing decreases with N
-  const dotSizes = {
-    1: [20],
-    2: [16, 12],
-    3: [14, 10, 7],
-    4: [12, 9, 6, 5],
-    5: [10, 8, 6, 5, 4],
-  };
-  const sizes = dotSizes[N] || new Array(N).fill(5);
-
-  // Gaps between dots at each level
-  const gapSizes = {
-    1: [30],
-    2: [40, 8],
-    3: [24, 6, 3],
-    4: [16, 4, 2, 1],
-    5: [10, 3, 1, 1, 0],
-  };
-  const gaps = gapSizes[N] || new Array(N).fill(2);
-
-  // Group gaps (space between groups at each level)
-  const groupGaps = {
-    1: [0],
-    2: [30, 0],
-    3: [20, 8, 0],
-    4: [14, 6, 3, 0],
-    5: [8, 4, 2, 1, 0],
-  };
-  const gGaps = groupGaps[N] || new Array(N).fill(0);
-
-  // Create all dots organized by level
-  // allDots[level] = array of dots, length = 3^(level+1)
-  const allDots = [];
-  for (let level = 0; level < N; level++) {
-    const count = Math.pow(3, level + 1);
-    const row = document.createElement('div');
-    row.style.cssText = `display: flex; align-items: center; justify-content: center; flex-shrink: 0;`;
-    const dotsAtLevel = [];
-    for (let i = 0; i < count; i++) {
-      const dot = bc.makeDot(sizes[level], 'empty');
-      dotsAtLevel.push(dot);
-      row.appendChild(dot);
-
-      // Add gap after each dot
-      if (i < count - 1) {
-        // Determine spacing: within group vs between groups
-        const groupSize = Math.pow(3, level + 1 - (level)); // not used; simpler approach below
-        // Every 3^(level) dots we need a bigger gap for grouping at parent level
-        let gapPx = gaps[level];
-        // Check all parent group boundaries
-        for (let g = level; g >= 0; g--) {
-          const groupLen = Math.pow(3, level + 1 - g);
-          if ((i + 1) % groupLen === 0) {
-            gapPx = Math.max(gapPx, gGaps[g] + gaps[level]);
-            break;
-          }
-        }
-        const spacer = document.createElement('div');
-        spacer.style.cssText = `width: ${gapPx}px; flex-shrink: 0;`;
-        row.appendChild(spacer);
-      }
-    }
-    allDots.push(dotsAtLevel);
-    treeWrap.appendChild(row);
-  }
-  main.appendChild(treeWrap);
-
-  // Tracking
-  const visited = new Set();
-  let totalVisited = 0;
-
-  const countLabel = document.createElement('div');
-  countLabel.textContent = '0 combinations found';
-  countLabel.style.cssText = 'font-size: 12px; color: #888; flex-shrink: 0;';
-  main.appendChild(countLabel);
-
-  const hint = document.createElement('div');
-  hint.textContent = 'Click tiles to cycle. Find all combinations \u2014 or just figure out the pattern!';
-  hint.style.cssText = 'font-size: 11px; color: #aaa; flex-shrink: 0;';
-  main.appendChild(hint);
-
-  // Answer box — always visible
-  const ansWrap = document.createElement('div');
-  ansWrap.style.cssText = 'flex-shrink: 0; margin-top: 4px;';
-  ansWrap.appendChild(bc.makeAnswerBox(total, () => {
-    if (N < 5) {
-      startNTileLesson(container, bc, N + 1);
-    } else {
-      bc.setDialogue(dialogue, 'Carol B',
-        '"3 \u00d7 3 \u00d7 3 \u00d7 3 \u00d7 3 = 243. A five-letter Wordle has 243 possible patterns. Now you\'re thinking like a Wordle player."',
-        '#e090d0');
-      setTimeout(() => bc.hide(), 4000);
-    }
-  }));
-  main.appendChild(ansWrap);
-
-  function getPathIndex(colors) {
-    // Convert array of color names to flat index in the tree
-    // colors[0] picks branch (0-2), colors[1] picks sub-branch, etc.
-    // At level L, the dot index = sum of colors[0..L] * 3^(L-i)
-    const indices = [];
-    for (let level = 0; level < N; level++) {
-      let idx = 0;
-      for (let i = 0; i <= level; i++) {
-        idx += C.indexOf(colors[i]) * Math.pow(3, level - i);
-      }
-      indices.push(idx);
-    }
-    return indices;
+    tile.addEventListener('click', () => cycleTile(tile, idx));
+    tilesRow.appendChild(tile);
   }
 
-  function updateTree() {
-    const key = curColors.join(',');
-    const pathIndices = getPathIndex(curColors);
+  buildTree(N);
 
-    if (!visited.has(key)) {
-      visited.add(key);
-      totalVisited++;
-      // Fill dots along this path
-      for (let level = 0; level < N; level++) {
-        bc.colorDot(allDots[level][pathIndices[level]], curColors[level]);
-      }
-      countLabel.textContent = `${totalVisited} combination${totalVisited !== 1 ? 's' : ''} found`;
-    }
+  const ansInput = app.querySelector('#ansInput');
+  const ansBtn = app.querySelector('#ansBtn');
+  ansBtn.addEventListener('click', submitAnswer);
+  ansInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitAnswer(); });
+  ansInput.focus();
+}
 
-    // Highlight current path
-    for (let level = 0; level < N; level++) {
-      const count = allDots[level].length;
-      for (let i = 0; i < count; i++) {
-        bc.highlightDot(allDots[level][i], i === pathIndices[level]);
-      }
-    }
-  }
-
-  // Initial state
+function cycleTile(tile, idx) {
+  const cur = tile.dataset.color;
+  const next = COLORS[(COLORS.indexOf(cur) + 1) % 3];
+  tile.dataset.color = next;
+  tile.style.background = HEX[next];
+  curColors[idx] = next;
   updateTree();
+}
+
+function buildTree(N) {
+  const treeZone = getApp().querySelector('#treeZone');
+  const isMobile = window.innerWidth <= 600;
+  const leafCount = Math.pow(3, N);
+
+  let nodeR;
+  if (isMobile) {
+    nodeR = N <= 2 ? 10 : N === 3 ? 7 : N === 4 ? 5 : 4;
+  } else {
+    nodeR = N <= 2 ? 12 : N === 3 ? 9 : N === 4 ? 7 : 5;
+  }
+
+  const ringGap = 4;
+  const ringR = nodeR + ringGap;
+  const refWidth = isMobile ? 320 : 700;
+  const leafGap = refWidth / (leafCount + 1);
+  const levelHeight = N === 1 ? 0 : (isMobile ? 50 : 70);
+  const svgH = (N - 1) * levelHeight + ringR * 2 + 4;
+
+  // Compute positions
+  const positions = [];
+  const leafY = (N - 1) * levelHeight + ringR + 2;
+  const leafPositions = [];
+  for (let i = 0; i < leafCount; i++) {
+    leafPositions.push({ x: leafGap * (i + 1), y: leafY });
+  }
+  positions[N - 1] = leafPositions;
+
+  for (let level = N - 2; level >= 0; level--) {
+    const count = Math.pow(3, level + 1);
+    const y = level * levelHeight + ringR + 2;
+    const childLevel = positions[level + 1];
+    const parentPositions = [];
+    for (let i = 0; i < count; i++) {
+      const c0 = childLevel[i * 3];
+      const c2 = childLevel[i * 3 + 2];
+      parentPositions.push({ x: (c0.x + c2.x) / 2, y });
+    }
+    positions[level] = parentPositions;
+  }
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', `0 0 ${refWidth} ${svgH}`);
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  svg.style.maxWidth = '100%';
+  svg.style.maxHeight = '100%';
+  svgEl = svg;
+
+  // Lines
+  for (let level = 0; level < N - 1; level++) {
+    const parents = positions[level];
+    const children = positions[level + 1];
+    for (let i = 0; i < parents.length; i++) {
+      for (let j = 0; j < 3; j++) {
+        const child = children[i * 3 + j];
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', parents[i].x);
+        line.setAttribute('y1', parents[i].y);
+        line.setAttribute('x2', child.x);
+        line.setAttribute('y2', child.y);
+        line.setAttribute('stroke', '#ddd');
+        line.setAttribute('stroke-width', '1.5');
+        line.dataset.parentLevel = level;
+        line.dataset.parentIdx = i;
+        line.dataset.childIdx = i * 3 + j;
+        svg.appendChild(line);
+      }
+    }
+  }
+
+  // Nodes
+  nodes = [];
+  for (let level = 0; level < N; level++) {
+    const levelNodes = [];
+    for (let i = 0; i < positions[level].length; i++) {
+      const pos = positions[level][i];
+
+      const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      ring.setAttribute('cx', pos.x);
+      ring.setAttribute('cy', pos.y);
+      ring.setAttribute('r', ringR);
+      ring.setAttribute('fill', 'none');
+      ring.setAttribute('stroke', 'transparent');
+      ring.setAttribute('stroke-width', '2.5');
+      svg.appendChild(ring);
+
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', pos.x);
+      circle.setAttribute('cy', pos.y);
+      circle.setAttribute('r', nodeR);
+      circle.setAttribute('fill', HEX.empty);
+      circle.setAttribute('stroke', STROKE.empty);
+      circle.setAttribute('stroke-width', '1.5');
+      svg.appendChild(circle);
+
+      levelNodes.push({ color: 'empty', el: circle, ringEl: ring });
+    }
+    nodes.push(levelNodes);
+  }
+
+  treeZone.appendChild(svg);
+  updateTree();
+}
+
+function getPathIndices(colors) {
+  const indices = [];
+  for (let level = 0; level < colors.length; level++) {
+    let idx = 0;
+    for (let i = 0; i <= level; i++) {
+      idx += COLORS.indexOf(colors[i]) * Math.pow(3, level - i);
+    }
+    indices.push(idx);
+  }
+  return indices;
+}
+
+function updateTree() {
+  const key = curColors.join(',');
+  const pathIndices = getPathIndices(curColors);
+
+  if (!visited.has(key)) {
+    visited.add(key);
+    totalVisited++;
+    for (let level = 0; level < currentN; level++) {
+      const node = nodes[level][pathIndices[level]];
+      const color = curColors[level];
+      node.color = color;
+      node.el.setAttribute('fill', HEX[color]);
+      node.el.setAttribute('stroke', STROKE[color]);
+    }
+    counterEl.textContent = `${totalVisited} combination${totalVisited !== 1 ? 's' : ''} found`;
+  }
+
+  // Highlight current path — ring only, no layout shift
+  for (let level = 0; level < currentN; level++) {
+    for (let i = 0; i < nodes[level].length; i++) {
+      nodes[level][i].ringEl.setAttribute('stroke', i === pathIndices[level] ? '#e67e22' : 'transparent');
+    }
+  }
+
+  // Highlight lines on path
+  if (svgEl) {
+    svgEl.querySelectorAll('line').forEach(line => {
+      const pLevel = parseInt(line.dataset.parentLevel);
+      const pIdx = parseInt(line.dataset.parentIdx);
+      const cIdx = parseInt(line.dataset.childIdx);
+      const onPath = pIdx === pathIndices[pLevel] && cIdx === pathIndices[pLevel + 1];
+      line.setAttribute('stroke', onPath ? '#e67e22' : '#ddd');
+      line.setAttribute('stroke-width', onPath ? '2.5' : '1.5');
+    });
+  }
+}
+
+function submitAnswer() {
+  const input = getApp().querySelector('#ansInput');
+  const total = Math.pow(3, currentN);
+  if (input.value.trim() === String(total)) {
+    feedbackEl.textContent = 'Correct!';
+    feedbackEl.style.color = '#6aaa64';
+    input.disabled = true;
+    getApp().querySelector('#ansBtn').disabled = true;
+    if (currentN < MAX_N) {
+      highestUnlocked = Math.max(highestUnlocked, currentN + 1);
+      setTimeout(() => startLesson(currentN + 1), 800);
+    } else {
+      getApp().querySelector('#dialogueText').textContent =
+        '"3 × 3 × 3 × 3 × 3 = 243. A five-letter Wordle row has 243 possible patterns. Now you\'re thinking like a Wordle player."';
+      setTimeout(() => Bootcamp.hide(), 4000);
+    }
+  } else {
+    feedbackEl.textContent = 'Try again.';
+    feedbackEl.style.color = '#c0392b';
+    input.value = '';
+    input.focus();
+  }
 }
