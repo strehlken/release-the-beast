@@ -891,8 +891,8 @@ function openBeastVent() {
       { speaker: 'Harry Bonds', text: '"That\'s great, but she\'s not here. So how is she going to help me."' },
       { speaker: 'The Beast', text: '"Well, she\'s not *here* but I might be able to find her."' },
       { speaker: 'The Beast', text: '"Give me a minute."', pause: true },
-      { speaker: '', text: '', blackout: true },
-      { speaker: 'The Beast', text: '"Found her."', image: 'carol' },
+      { speaker: '', text: '', blackout: true, nextImage: 'carol' },
+      { speaker: 'The Beast', text: '"Found her."' },
     ];
     popup.beastChatIndex = 0;
     return;
@@ -1659,8 +1659,11 @@ function drawPopup() {
   if (popup.isBeastChat) {
     const line = popup.beastChatLines[popup.beastChatIndex];
 
-    // Handle image transitions BEFORE rendering
-    if (line && line.image === 'carol') popup.beastChatImg = beastCarolImg;
+    // Handle image transitions — check if PREVIOUS line had nextImage
+    if (popup.beastChatIndex > 0) {
+      const prev = popup.beastChatLines[popup.beastChatIndex - 1];
+      if (prev && prev.nextImage === 'carol') popup.beastChatImg = beastCarolImg;
+    }
 
     if (line && line.blackout) {
       ctx.fillStyle = '#000';
