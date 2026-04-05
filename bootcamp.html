@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wordle Bootcamp — Tree Prototype</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background: #f5f4ef;
+    color: #1a1a2a;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .bootcamp {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  /* --- Dialogue bar --- */
+  .dialogue-bar {
+    background: #2a2a3a;
+    color: #eee;
+    padding: 12px 20px;
+    font-size: 17px;
+    line-height: 1.5;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    border-bottom: 3px solid #3a3a4a;
+  }
+  .dialogue-bar .speaker {
+    font-weight: 700;
+    color: #e090d0;
+    white-space: nowrap;
+  }
+
+  /* --- Controls row: answer | tiles | nav --- */
+  .controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    flex-shrink: 0;
+    border-bottom: 1px solid #ddd;
+    background: #f5f4ef;
+    position: relative;
+  }
+
+  .answer-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .answer-group input {
+    width: 58px;
+    padding: 8px 10px;
+    font-size: 18px;
+    text-align: center;
+    border: 2px solid #ccc;
+    border-radius: 6px;
+    outline: none;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    color: #1a1a2a;
+  }
+  .answer-group input::placeholder {
+    color: #bbb;
+    font-style: italic;
+  }
+  .answer-group input:focus { border-color: #6aaa64; }
+  .answer-group button {
+    padding: 8px 16px;
+    font-size: 15px;
+    cursor: pointer;
+    background: #e8e8e3;
+    color: #444;
+    border: 2px solid #ccc;
+    border-radius: 6px;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-weight: 500;
+    transition: background 0.15s;
+  }
+  .answer-group button:hover { background: #ddd; }
+  .answer-group .feedback {
+    font-size: 14px;
+    min-width: 60px;
+  }
+
+  .tiles-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .wordle-tile {
+    width: 48px;
+    height: 48px;
+    border-radius: 5px;
+    border: 2px solid rgba(0,0,0,0.12);
+    cursor: pointer;
+    transition: background 0.15s;
+    user-select: none;
+  }
+  .wordle-tile:hover { opacity: 0.85; }
+  .wordle-tile:active { transform: scale(0.95); }
+
+  .nav-group {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-shrink: 0;
+  }
+  .nav-group .label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #888;
+    white-space: nowrap;
+  }
+  .nav-group button {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+    font-weight: 600;
+    border: 2px solid #ccc;
+    border-radius: 50%;
+    background: white;
+    cursor: pointer;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    color: #555;
+    transition: all 0.15s;
+  }
+  .nav-group button:hover { border-color: #999; }
+  .nav-group button.active {
+    background: #2a2a3a;
+    color: white;
+    border-color: #2a2a3a;
+  }
+  .nav-group button.locked {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  /* --- Tree SVG --- */
+  .tree-zone {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 0;
+    overflow: hidden;
+  }
+  .tree-zone svg {
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  /* --- Bottom: counter --- */
+  .bottom-zone {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 0 16px;
+    border-top: 1px solid #ddd;
+    background: #f5f4ef;
+  }
+  .counter {
+    font-size: 15px;
+    color: #999;
+  }
+
+  /* --- Mobile --- */
+  @media (max-width: 600px) {
+    .dialogue-bar { font-size: 14px; padding: 10px 14px; }
+    .controls-row { padding: 10px 12px; }
+    .wordle-tile { width: 36px; height: 36px; }
+    .answer-group input { width: 46px; font-size: 15px; padding: 6px 6px; }
+    .answer-group button { font-size: 13px; padding: 6px 10px; }
+    .nav-group .label { font-size: 11px; }
+    .nav-group button { width: 28px; height: 28px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bootcamp" id="app"></div>
+
+<script>
+const COLORS = ['green', 'yellow', 'gray'];
+const HEX = { green: '#6aaa64', yellow: '#c9b458', gray: '#787c7e', empty: '#ddd' };
+const STROKE = { green: '#5a9a54', yellow: '#b9a448', gray: '#686c6e', empty: '#bbb' };
+
+const PROMPTS = {
+  1: '"Your first assignment: How many ways are there to color a single square in a Wordle pattern?"',
+  2: '"OK, great. You got the warm-up. Big whoop. Now, how many different ways are there to color TWO Wordle squares, Mr. Smarty Pants?"',
+  3: '"Now we\'re cooking. How many ways to color THREE squares? Think about it."',
+};
+
+const MAX_N = 3;
+let highestUnlocked = 1;
+let currentN = 1;
+let curColors = [];
+let visited = new Set();
+let totalVisited = 0;
+let nodes = [];
+let svgEl = null;
+let counterEl = null;
+let feedbackEl = null;
+
+function startLesson(N) {
+  currentN = N;
+  curColors = Array(N).fill('green');
+  visited = new Set();
+  totalVisited = 0;
+  nodes = [];
+
+  const app = document.getElementById('app');
+
+  app.innerHTML = `
+    <div class="dialogue-bar">
+      <span class="speaker">Carol B</span>
+      <span id="dialogueText">${PROMPTS[N]}</span>
+    </div>
+    <div class="controls-row">
+      <div class="answer-group">
+        <input type="text" id="ansInput" placeholder="?">
+        <button onclick="submitAnswer()">Answer</button>
+        <span class="feedback" id="feedback"></span>
+      </div>
+      <div class="tiles-row" id="tilesRow"></div>
+      <div class="nav-group" id="navGroup">
+        <span class="label"># tiles:</span>
+      </div>
+    </div>
+    <div class="tree-zone" id="treeZone"></div>
+    <div class="bottom-zone">
+      <div class="counter" id="counter">0 combinations found</div>
+    </div>
+  `;
+
+  // Build nav buttons with lock state
+  const navGroup = document.getElementById('navGroup');
+  for (let i = 1; i <= MAX_N; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = i;
+    btn.id = 'nav' + i;
+    if (i === N) btn.classList.add('active');
+    if (i > highestUnlocked) btn.classList.add('locked');
+    const level = i;
+    btn.addEventListener('click', () => {
+      if (level <= highestUnlocked) startLesson(level);
+    });
+    navGroup.appendChild(btn);
+  }
+
+  counterEl = document.getElementById('counter');
+  feedbackEl = document.getElementById('feedback');
+
+  const tilesRow = document.getElementById('tilesRow');
+  for (let t = 0; t < N; t++) {
+    const tile = document.createElement('div');
+    tile.className = 'wordle-tile';
+    tile.style.background = HEX.green;
+    tile.dataset.color = 'green';
+    tile.addEventListener('click', () => cycleTile(tile, t));
+    tilesRow.appendChild(tile);
+  }
+
+  buildTree(N);
+
+  document.getElementById('ansInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitAnswer();
+  });
+  document.getElementById('ansInput').focus();
+}
+
+function cycleTile(tile, idx) {
+  const cur = tile.dataset.color;
+  const next = COLORS[(COLORS.indexOf(cur) + 1) % 3];
+  tile.dataset.color = next;
+  tile.style.background = HEX[next];
+  curColors[idx] = next;
+  updateTree();
+}
+
+function buildTree(N) {
+  const treeZone = document.getElementById('treeZone');
+  const isMobile = window.innerWidth <= 600;
+
+  const leafCount = Math.pow(3, N);
+
+  // Node radius — consistent within each lesson
+  let nodeR;
+  if (isMobile) {
+    nodeR = N === 1 ? 10 : N === 2 ? 7 : 5;
+  } else {
+    nodeR = N === 1 ? 12 : N === 2 ? 10 : 8;
+  }
+
+  const ringGap = 4;
+  const ringR = nodeR + ringGap;
+
+  // SVG coordinate width
+  const refWidth = isMobile ? 320 : 700;
+
+  // KEY RULE: equal gaps everywhere including edges
+  // leafCount items need leafCount+1 equal gaps across the full width
+  // gap = refWidth / (leafCount + 1)
+  // leaf i center = gap * (i + 1)
+  const leafGap = refWidth / (leafCount + 1);
+
+  const levelHeight = N === 1 ? 0 : (isMobile ? 50 : 70);
+  const svgH = (N - 1) * levelHeight + ringR * 2 + 4;
+
+  // Compute positions
+  const positions = [];
+
+  // Leaves: equally distributed with edge gaps
+  const leafY = (N - 1) * levelHeight + ringR + 2;
+  const leafPositions = [];
+  for (let i = 0; i < leafCount; i++) {
+    leafPositions.push({ x: leafGap * (i + 1), y: leafY });
+  }
+  positions[N - 1] = leafPositions;
+
+  // Parents centered above their 3 children
+  for (let level = N - 2; level >= 0; level--) {
+    const count = Math.pow(3, level + 1);
+    const y = level * levelHeight + ringR + 2;
+    const childLevel = positions[level + 1];
+    const parentPositions = [];
+    for (let i = 0; i < count; i++) {
+      const c0 = childLevel[i * 3];
+      const c2 = childLevel[i * 3 + 2];
+      parentPositions.push({ x: (c0.x + c2.x) / 2, y });
+    }
+    positions[level] = parentPositions;
+  }
+
+  // Create SVG
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', `0 0 ${refWidth} ${svgH}`);
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  svg.style.maxWidth = '100%';
+  svg.style.maxHeight = '100%';
+  svgEl = svg;
+
+  // Lines
+  for (let level = 0; level < N - 1; level++) {
+    const parents = positions[level];
+    const children = positions[level + 1];
+    for (let i = 0; i < parents.length; i++) {
+      for (let j = 0; j < 3; j++) {
+        const child = children[i * 3 + j];
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', parents[i].x);
+        line.setAttribute('y1', parents[i].y);
+        line.setAttribute('x2', child.x);
+        line.setAttribute('y2', child.y);
+        line.setAttribute('stroke', '#ddd');
+        line.setAttribute('stroke-width', '1.5');
+        line.dataset.parentLevel = level;
+        line.dataset.parentIdx = i;
+        line.dataset.childIdx = i * 3 + j;
+        svg.appendChild(line);
+      }
+    }
+  }
+
+  // Nodes
+  nodes = [];
+  for (let level = 0; level < N; level++) {
+    const levelNodes = [];
+    for (let i = 0; i < positions[level].length; i++) {
+      const pos = positions[level][i];
+
+      const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      ring.setAttribute('cx', pos.x);
+      ring.setAttribute('cy', pos.y);
+      ring.setAttribute('r', ringR);
+      ring.setAttribute('fill', 'none');
+      ring.setAttribute('stroke', 'transparent');
+      ring.setAttribute('stroke-width', '2.5');
+      svg.appendChild(ring);
+
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', pos.x);
+      circle.setAttribute('cy', pos.y);
+      circle.setAttribute('r', nodeR);
+      circle.setAttribute('fill', HEX.empty);
+      circle.setAttribute('stroke', STROKE.empty);
+      circle.setAttribute('stroke-width', '1.5');
+      svg.appendChild(circle);
+
+      levelNodes.push({
+        color: 'empty',
+        el: circle,
+        ringEl: ring
+      });
+    }
+    nodes.push(levelNodes);
+  }
+
+  treeZone.appendChild(svg);
+  updateTree();
+}
+
+function getPathIndices(colors) {
+  const indices = [];
+  for (let level = 0; level < colors.length; level++) {
+    let idx = 0;
+    for (let i = 0; i <= level; i++) {
+      idx += COLORS.indexOf(colors[i]) * Math.pow(3, level - i);
+    }
+    indices.push(idx);
+  }
+  return indices;
+}
+
+function updateTree() {
+  const key = curColors.join(',');
+  const pathIndices = getPathIndices(curColors);
+
+  if (!visited.has(key)) {
+    visited.add(key);
+    totalVisited++;
+    for (let level = 0; level < currentN; level++) {
+      const node = nodes[level][pathIndices[level]];
+      const color = curColors[level];
+      node.color = color;
+      node.el.setAttribute('fill', HEX[color]);
+      node.el.setAttribute('stroke', STROKE[color]);
+    }
+    counterEl.textContent = `${totalVisited} combination${totalVisited !== 1 ? 's' : ''} found`;
+  }
+
+  for (let level = 0; level < currentN; level++) {
+    for (let i = 0; i < nodes[level].length; i++) {
+      nodes[level][i].ringEl.setAttribute('stroke', i === pathIndices[level] ? '#e67e22' : 'transparent');
+    }
+  }
+
+  if (svgEl) {
+    svgEl.querySelectorAll('line').forEach(line => {
+      const pLevel = parseInt(line.dataset.parentLevel);
+      const pIdx = parseInt(line.dataset.parentIdx);
+      const cIdx = parseInt(line.dataset.childIdx);
+      const onPath = pIdx === pathIndices[pLevel] && cIdx === pathIndices[pLevel + 1];
+      line.setAttribute('stroke', onPath ? '#e67e22' : '#ddd');
+      line.setAttribute('stroke-width', onPath ? '2.5' : '1.5');
+    });
+  }
+}
+
+function submitAnswer() {
+  const input = document.getElementById('ansInput');
+  const total = Math.pow(3, currentN);
+  if (input.value.trim() === String(total)) {
+    feedbackEl.textContent = 'Correct!';
+    feedbackEl.style.color = '#6aaa64';
+    input.disabled = true;
+    if (currentN < MAX_N) {
+      highestUnlocked = Math.max(highestUnlocked, currentN + 1);
+      setTimeout(() => startLesson(currentN + 1), 800);
+    } else {
+      document.getElementById('dialogueText').textContent =
+        '"3 × 3 × 3 = 27. Every square you add multiplies by 3. Now you\'re thinking like a Wordle player."';
+      // Notify parent game
+      if (window.parent && window.parent.Bootcamp) {
+        setTimeout(() => window.parent.Bootcamp.hide(), 3000);
+      }
+    }
+  } else {
+    feedbackEl.textContent = 'Try again.';
+    feedbackEl.style.color = '#c0392b';
+    input.value = '';
+    input.focus();
+  }
+}
+
+startLesson(1);
+</script>
+</body>
+</html>
