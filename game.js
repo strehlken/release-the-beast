@@ -883,7 +883,7 @@ function openBeastVent() {
       { speaker: 'Harry Bonds', text: '"Who is that?"' },
       { speaker: 'The Beast', text: '"Oh come on. You know Carol B. The comedian and movie star!!"' },
       { speaker: 'Harry Bonds', text: '"Nope. Never heard of her."' },
-      { speaker: 'The Beast', text: '"Oh sure you have. You\'ve seen Between Friends? Seasons of the Heart? Pete n Tillie? Chu Chu and the Philly Flash? What about Annie?"' },
+      { speaker: 'The Beast', text: '"Oh sure you have. You\'ve seen The Carol Burnett Show? Between Friends? Seasons of the Heart? Pete n Tillie? Chu Chu and the Philly Flash? What about Annie?"' },
       { speaker: 'Harry Bonds', text: '"Are those supposed to be movies? I\'ve never heard of them."' },
       { speaker: 'The Beast', text: '"Good god. Kids these days. All they do is play video games."' },
       { speaker: 'The Beast', text: '"Well, Carol B is a great actress and she is a world famous Wordle player. She got 7 hole-in-one Wordles."' },
