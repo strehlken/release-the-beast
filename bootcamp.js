@@ -377,6 +377,9 @@ function updateTree() {
   }
 }
 
+window.submitAnswer = submitAnswer;
+window.startLesson = startLesson;
+
 function submitAnswer() {
   const input = document.getElementById('ansInput');
   console.log('submitAnswer called, value:', input ? input.value : 'NO INPUT');
