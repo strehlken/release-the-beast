@@ -45,7 +45,7 @@ const PROMPTS = {
   5: '"Five squares. That\'s a full Wordle row. How many possible patterns?"',
 };
 
-const MAX_N = 5;
+const MAX_N = 3;
 let highestUnlocked = 1;
 let currentN = 1;
 let curColors = [];
@@ -72,78 +72,84 @@ function startLesson(N) {
   app.innerHTML = `
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
-  #bootcamp-overlay *, #bootcamp-overlay *::before, #bootcamp-overlay *::after {
-    margin: 0; padding: 0; box-sizing: border-box;
-  }
-  .bootcamp {
+
+  #bootcamp-overlay .bootcamp {
     font-family: 'DM Sans', system-ui, sans-serif;
     background: #f5f4ef; color: #1a1a2a;
     display: flex; flex-direction: column; height: 100vh;
   }
-  .dialogue-bar {
+
+  #bootcamp-overlay .dialogue-bar {
     background: #2a2a3a; color: #eee; padding: 12px 20px;
     font-size: 17px; line-height: 1.5;
     display: flex; align-items: center; gap: 12px;
     flex-shrink: 0; border-bottom: 3px solid #3a3a4a;
   }
-  .dialogue-bar .speaker { font-weight: 700; color: #e090d0; white-space: nowrap; }
-  .controls-row {
+  #bootcamp-overlay .dialogue-bar .speaker { font-weight: 700; color: #e090d0; white-space: nowrap; }
+
+  #bootcamp-overlay .controls-row {
     display: flex; align-items: center; justify-content: space-between;
     padding: 14px 24px; flex-shrink: 0;
     border-bottom: 1px solid #ddd; background: #f5f4ef;
   }
-  .answer-group { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-  .answer-group input {
+
+  #bootcamp-overlay .answer-group { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  #bootcamp-overlay .answer-group input {
     width: 58px; padding: 8px 10px; font-size: 18px; text-align: center;
     border: 2px solid #ccc; border-radius: 6px; outline: none;
     font-family: 'DM Sans', system-ui, sans-serif; color: #1a1a2a;
   }
-  .answer-group input::placeholder { color: #bbb; font-style: italic; }
-  .answer-group input:focus { border-color: #6aaa64; }
-  .answer-group button {
+  #bootcamp-overlay .answer-group input::placeholder { color: #bbb; font-style: italic; }
+  #bootcamp-overlay .answer-group input:focus { border-color: #6aaa64; }
+  #bootcamp-overlay .answer-group button {
     padding: 8px 16px; font-size: 15px; cursor: pointer;
     background: #e8e8e3; color: #444; border: 2px solid #ccc; border-radius: 6px;
     font-family: 'DM Sans', system-ui, sans-serif; font-weight: 500;
     transition: background 0.15s;
   }
-  .answer-group button:hover { background: #ddd; }
-  .answer-group .feedback { font-size: 14px; min-width: 60px; }
-  .tiles-row { display: flex; justify-content: center; align-items: center; gap: 8px; }
-  .wordle-tile {
+  #bootcamp-overlay .answer-group button:hover { background: #ddd; }
+  #bootcamp-overlay .answer-group .feedback { font-size: 14px; min-width: 60px; }
+
+  #bootcamp-overlay .tiles-row { display: flex; justify-content: center; align-items: center; gap: 8px; }
+  #bootcamp-overlay .wordle-tile {
     width: 48px; height: 48px; border-radius: 5px;
     border: 2px solid rgba(0,0,0,0.12); cursor: pointer;
     transition: background 0.15s; user-select: none;
   }
-  .wordle-tile:hover { opacity: 0.85; }
-  .wordle-tile:active { transform: scale(0.95); }
-  .nav-group { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
-  .nav-group .label { font-size: 13px; font-weight: 500; color: #888; white-space: nowrap; }
-  .nav-group button {
+  #bootcamp-overlay .wordle-tile:hover { opacity: 0.85; }
+  #bootcamp-overlay .wordle-tile:active { transform: scale(0.95); }
+
+  #bootcamp-overlay .nav-group { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+  #bootcamp-overlay .nav-group .label { font-size: 13px; font-weight: 500; color: #888; white-space: nowrap; }
+  #bootcamp-overlay .nav-group button {
     width: 32px; height: 32px; font-size: 14px; font-weight: 600;
     border: 2px solid #ccc; border-radius: 50%; background: white; cursor: pointer;
     font-family: 'DM Sans', system-ui, sans-serif; color: #555; transition: all 0.15s;
   }
-  .nav-group button:hover:not(.locked) { border-color: #999; }
-  .nav-group button.active { background: #2a2a3a; color: white; border-color: #2a2a3a; }
-  .nav-group button.locked { opacity: 0.35; cursor: not-allowed; }
-  .tree-zone {
+  #bootcamp-overlay .nav-group button:hover:not(.locked) { border-color: #999; }
+  #bootcamp-overlay .nav-group button.active { background: #2a2a3a; color: white; border-color: #2a2a3a; }
+  #bootcamp-overlay .nav-group button.locked { opacity: 0.35; cursor: not-allowed; }
+
+  #bootcamp-overlay .tree-zone {
     flex: 1; display: flex; align-items: center; justify-content: center;
     padding: 12px 0; overflow: hidden;
   }
-  .tree-zone svg { max-width: 100%; max-height: 100%; }
-  .bottom-zone {
+  #bootcamp-overlay .tree-zone svg { max-width: 100%; max-height: 100%; }
+
+  #bootcamp-overlay .bottom-zone {
     flex-shrink: 0; display: flex; align-items: center; justify-content: center;
     padding: 12px 0 16px; border-top: 1px solid #ddd; background: #f5f4ef;
   }
-  .counter { font-size: 15px; color: #999; }
+  #bootcamp-overlay .counter { font-size: 15px; color: #999; }
+
   @media (max-width: 600px) {
-    .dialogue-bar { font-size: 14px; padding: 10px 14px; }
-    .controls-row { padding: 10px 12px; }
-    .wordle-tile { width: 36px; height: 36px; }
-    .answer-group input { width: 46px; font-size: 15px; padding: 6px 6px; }
-    .answer-group button { font-size: 13px; padding: 6px 10px; }
-    .nav-group .label { font-size: 11px; }
-    .nav-group button { width: 28px; height: 28px; font-size: 12px; }
+    #bootcamp-overlay .dialogue-bar { font-size: 14px; padding: 10px 14px; }
+    #bootcamp-overlay .controls-row { padding: 10px 12px; }
+    #bootcamp-overlay .wordle-tile { width: 36px; height: 36px; }
+    #bootcamp-overlay .answer-group input { width: 46px; font-size: 15px; padding: 6px 6px; }
+    #bootcamp-overlay .answer-group button { font-size: 13px; padding: 6px 10px; }
+    #bootcamp-overlay .nav-group .label { font-size: 11px; }
+    #bootcamp-overlay .nav-group button { width: 28px; height: 28px; font-size: 12px; }
   }
 </style>
 <div class="bootcamp">
