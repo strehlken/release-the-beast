@@ -620,24 +620,25 @@ window.addEventListener('keydown', e => {
       return; // on page 1 unsolved, space does nothing (use Enter)
     }
     if (popup.open && popup.isBeastChat) {
+      // Check CURRENT line for bootcamp launch
+      const curLine = popup.beastChatLines[popup.beastChatIndex];
+      if (curLine && curLine.launchBootcamp) {
+        const lessonId = curLine.launchBootcamp;
+        closePopup();
+        Bootcamp.onComplete = () => {};
+        setTimeout(() => Bootcamp.show(lessonId), 300);
+        return;
+      }
       if (popup.beastChatIndex < popup.beastChatLines.length - 1) {
         popup.beastChatIndex++;
-        // Check if this line launches bootcamp
-        const line = popup.beastChatLines[popup.beastChatIndex];
-        if (line && line.launchBootcamp) {
-          closePopup();
-          WIRE.stage = 11;
-          Bootcamp.onComplete = () => {
-            const code = getStateCode();
-            if (code) setTimeout(() => flashCode(code), 500);
-          };
-          setTimeout(() => Bootcamp.show(line.launchBootcamp), 300);
+        // Also check the NEW line for bootcamp
+        const nextLine = popup.beastChatLines[popup.beastChatIndex];
+        if (nextLine && nextLine.launchBootcamp) {
+          // Show this line first, bootcamp launches on next space
         }
       } else {
         WIRE.stage = 11;
         closePopup();
-        const code = getStateCode();
-        if (code) setTimeout(() => flashCode(code), 500);
       }
       return;
     }
