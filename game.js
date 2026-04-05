@@ -899,7 +899,7 @@ function openBeastVent() {
       { speaker: 'Harry Bonds', text: '"Created to replace you? What are you talking about?"' },
       { speaker: 'Carol B', text: '"Well hello there! And who might this little snot be?"' },
       { speaker: 'The Beast', text: '"Oh pardon my manners, Carol, this is the esteemed Harry Bonds. Though sadly uncultured and unschooled in television & film, he has an admirable prowess for solving puzzles, which is fortunate because\u2014"' },
-      { speaker: 'Carol B', text: '"Harry Bonds, you say? Well, it\'s good to meet you Harry. Now I\'m a busy gal. What do you both have for me."' },
+      { speaker: 'Carol B', text: '"Harry Bonds, you say? Well, it\'s good to meet you Harry Bonds. Now I\'m a busy gal. What do you both have for me."' },
       { speaker: 'The Beast', text: '"Yes, yes, well, you see\u2014"' },
       { speaker: 'Harry Bonds', text: '"I have to solve a Wordle puzzle to get out of the Puzzlemaster\'s dungeon and The Beast and N-hyphen-Strokes said you\'re the only one who can help."' },
       { speaker: 'Carol B', text: '"Now the Puzzlemaster is making his own Wordle puzzles, eh? Well, well, well."' },
