@@ -304,16 +304,16 @@ function buildTree(N) {
   // Node radius — consistent within each lesson
   let nodeR;
   if (isMobile) {
-    nodeR = N === 1 ? 10 : N === 2 ? 7 : N === 3 ? 5 : 3;
+    nodeR = N === 1 ? 10 : N === 2 ? 7 : N === 3 ? 5 : 2;
   } else {
-    nodeR = N === 1 ? 12 : N === 2 ? 10 : N === 3 ? 8 : 4;
+    nodeR = N === 1 ? 12 : N === 2 ? 10 : N === 3 ? 8 : 3;
   }
 
-  const ringGap = 4;
+  const ringGap = N <= 3 ? 4 : 2;
   const ringR = nodeR + ringGap;
 
-  // SVG coordinate width
-  const refWidth = isMobile ? 320 : 700;
+  // SVG coordinate width — scale up for large N so dots aren't crushed
+  const refWidth = isMobile ? 320 : (N <= 3 ? 700 : 1200);
 
   // KEY RULE: equal gaps everywhere including edges
   // leafCount items need leafCount+1 equal gaps across the full width
