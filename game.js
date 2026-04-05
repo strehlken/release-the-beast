@@ -1701,7 +1701,7 @@ function drawPopup() {
       ctx.fillStyle = line.speaker === 'The Beast' ? '#c0392b' : '#e0c080';
       ctx.fillText(line.speaker, W / 2, H - boxH + 14);
       ctx.fillStyle = '#ecf0f1';
-      wrapText(line.text, W / 2, H - boxH + 32, W - 40, 14);
+      wrapText(emphText(line.text), W / 2, H - boxH + 32, W - 40, 14);
       ctx.restore();
     }
     ctx.save();
@@ -2014,7 +2014,7 @@ function drawPopup() {
     ctx.fillText(pg.speaker, W / 2, by + 54);
     ctx.font = '9px "Press Start 2P", monospace';
     ctx.fillStyle = POP.text;
-    wrapText(pg.text, W / 2, by + 80, bw - 40, 15);
+    wrapText(emphText(pg.text), W / 2, by + 80, bw - 40, 15);
     ctx.font = '8px "Press Start 2P", monospace';
     ctx.fillStyle = POP.hint;
     ctx.fillText(popup.ventPage < popup.ventPages.length - 1 ? '[SPACE] to continue' : '[SPACE] to close', W / 2, by + bh - 16);
@@ -2183,6 +2183,11 @@ function drawPopup() {
   }
 
   ctx.restore();
+}
+
+// Convert *text* to TEXT (all caps emphasis)
+function emphText(text) {
+  return text.replace(/\*([^*]+)\*/g, (_, m) => m.toUpperCase());
 }
 
 function wrapText(text, x, y, maxWidth, lineHeight) {
