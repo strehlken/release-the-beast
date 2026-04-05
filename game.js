@@ -1659,8 +1659,9 @@ function drawPopup() {
   if (popup.isBeastChat) {
     const line = popup.beastChatLines[popup.beastChatIndex];
 
-    // Handle image transitions
+    // Handle image transitions BEFORE rendering
     if (line && line.image === 'carol') popup.beastChatImg = beastCarolImg;
+
     if (line && line.blackout) {
       ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, W, H);
@@ -1686,17 +1687,18 @@ function drawPopup() {
       ctx.drawImage(bgImg, (W - dw) / 2, (H - dh) / 2, dw, dh);
     }
 
-    // Dialogue bar at bottom
+    // Dialogue box — tall enough for 3 lines of text
     if (line && line.speaker) {
-      ctx.fillStyle = 'rgba(0,0,0,0.8)';
-      ctx.fillRect(0, H - 56, W, 56);
+      const boxH = 90;
+      ctx.fillStyle = 'rgba(0,0,0,0.85)';
+      ctx.fillRect(0, H - boxH, W, boxH);
       ctx.save();
       ctx.textAlign = 'center';
       ctx.font = '8px "Press Start 2P", monospace';
       ctx.fillStyle = line.speaker === 'The Beast' ? '#c0392b' : '#e0c080';
-      ctx.fillText(line.speaker, W / 2, H - 42);
+      ctx.fillText(line.speaker, W / 2, H - boxH + 14);
       ctx.fillStyle = '#ecf0f1';
-      wrapText(line.text, W / 2, H - 24, W - 40, 13);
+      wrapText(line.text, W / 2, H - boxH + 32, W - 40, 14);
       ctx.restore();
     }
     ctx.save();
