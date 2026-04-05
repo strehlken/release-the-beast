@@ -72,22 +72,24 @@ function startLesson(N) {
   app.innerHTML = `
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
-  #bootcamp-overlay * { margin: 0; padding: 0; box-sizing: border-box; }
+  #bootcamp-overlay *, #bootcamp-overlay *::before, #bootcamp-overlay *::after {
+    margin: 0; padding: 0; box-sizing: border-box;
+  }
   .bootcamp {
     font-family: 'DM Sans', system-ui, sans-serif;
     background: #f5f4ef; color: #1a1a2a;
     display: flex; flex-direction: column; height: 100vh;
   }
   .dialogue-bar {
-    background: #2a2a3a; color: #eee; padding: 14px 24px;
+    background: #2a2a3a; color: #eee; padding: 12px 20px;
     font-size: 17px; line-height: 1.5;
-    display: flex; align-items: center; gap: 14px;
+    display: flex; align-items: center; gap: 12px;
     flex-shrink: 0; border-bottom: 3px solid #3a3a4a;
   }
   .dialogue-bar .speaker { font-weight: 700; color: #e090d0; white-space: nowrap; }
   .controls-row {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 16px 24px; flex-shrink: 0;
+    padding: 14px 24px; flex-shrink: 0;
     border-bottom: 1px solid #ddd; background: #f5f4ef;
   }
   .answer-group { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
@@ -131,9 +133,9 @@ function startLesson(N) {
   .tree-zone svg { max-width: 100%; max-height: 100%; }
   .bottom-zone {
     flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-    padding: 14px 0 18px; border-top: 1px solid #ddd; background: #f5f4ef;
+    padding: 12px 0 16px; border-top: 1px solid #ddd; background: #f5f4ef;
   }
-  .counter { font-size: 15px; color: #999; letter-spacing: 0.3px; }
+  .counter { font-size: 15px; color: #999; }
   @media (max-width: 600px) {
     .dialogue-bar { font-size: 14px; padding: 10px 14px; }
     .controls-row { padding: 10px 12px; }
