@@ -1400,6 +1400,7 @@ window.addEventListener('resize', fitCanvas);
 
 // Pause menu click handler
 canvas.addEventListener('click', e => {
+  if (typeof Bootcamp !== 'undefined' && Bootcamp.active) return;
   const rect = canvas.getBoundingClientRect();
   const scaleX = W / rect.width;
   const scaleY = H / rect.height;

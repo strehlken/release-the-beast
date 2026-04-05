@@ -209,7 +209,10 @@ function startLesson(N) {
   document.getElementById('ansInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') submitAnswer();
   });
-  document.getElementById('ansInput').focus();
+  setTimeout(() => {
+    const inp = document.getElementById('ansInput');
+    if (inp) inp.focus();
+  }, 50);
 }
 
 function cycleTile(tile, idx) {
@@ -376,6 +379,7 @@ function updateTree() {
 
 function submitAnswer() {
   const input = document.getElementById('ansInput');
+  console.log('submitAnswer called, value:', input ? input.value : 'NO INPUT');
   const total = Math.pow(3, currentN);
   if (input.value.trim() === String(total)) {
     feedbackEl.textContent = 'Correct!';
