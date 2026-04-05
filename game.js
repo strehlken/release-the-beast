@@ -893,6 +893,29 @@ function openBeastVent() {
       { speaker: 'The Beast', text: '"Give me a minute."', pause: true },
       { speaker: '', text: '', blackout: true, nextImage: 'carol' },
       { speaker: 'The Beast', text: '"Found her."' },
+      { speaker: 'Carol B', text: '"Hello, Beast! Long time no see."' },
+      { speaker: 'The Beast', text: '"Carol, it is always such a pleasure. You know I am among your biggest fans."' },
+      { speaker: 'Carol B', text: '"I do know it. And it\'s always delightful to know that a computer which was created to replace me loves me so much."' },
+      { speaker: 'Harry Bonds', text: '"Created to replace you? What are you talking about?"' },
+      { speaker: 'Carol B', text: '"Well hello there! And who might this little snot be?"' },
+      { speaker: 'The Beast', text: '"Oh pardon my manners, Carol, this is the esteemed Harry Bonds. Though sadly uncultured and unschooled in television & film, he has an admirable prowess for solving puzzles, which is fortunate because\u2014"' },
+      { speaker: 'Carol B', text: '"Harry Bonds, you say? Well, it\'s good to meet you Harry. Now I\'m a busy gal. What do you both have for me."' },
+      { speaker: 'The Beast', text: '"Yes, yes, well, you see\u2014"' },
+      { speaker: 'Harry Bonds', text: '"I have to solve a Wordle puzzle to get out of the Puzzlemaster\'s dungeon and The Beast and N-hyphen-Strokes said you\'re the only one who can help."' },
+      { speaker: 'Carol B', text: '"Now the Puzzlemaster is making his own Wordle puzzles, eh? Well, well, well."' },
+      { speaker: 'Carol B', text: '"There was a time when he could barely solve Wordle in 5 or 6 guesses. It wasn\'t until I told him about my methods that he started winning that damned puzzling text message thread."' },
+      { speaker: 'Carol B', text: '"Once he started winning, he built a whole website to show... well, who was winning."' },
+      { speaker: 'Carol B', text: '"But *how* he won. Well, that was by using my own tricks."' },
+      { speaker: 'Harry Bonds', text: '"And what trick is that?"' },
+      { speaker: 'Carol B', text: '"I\'m the first one who figured out you can guess the Wordle answer just by looking at other people\'s patterns. That\'s the thing."' },
+      { speaker: 'Harry Bonds', text: '"That\'s just like my puzzle!"' },
+      { speaker: 'Harry Bonds', text: '"The Puzzlemaster put a puzzle on my cell door. He gave me two patterns and told me to figure out the answer word."' },
+      { speaker: 'Harry Bonds', text: '"He said even a child could do it."' },
+      { speaker: 'Carol B', text: '"Ha! Even a child could do it. That\'s what I told him when he couldn\'t figure out a Wordle one day."' },
+      { speaker: 'Carol B', text: '"He got so upset at my joke that he started crying. Stupid me, I felt bad and taught him my whole method. Now look what he\'s done with it."' },
+      { speaker: 'Harry Bonds', text: '"Can you teach me the secret ways?"' },
+      { speaker: 'Carol B', text: '"I can, but you better roll your sleeves up and get ready for some work, son."' },
+      { speaker: 'The Beast', text: '"Oh I\'m just so *excited*! All my friends are playing together!"' },
     ];
     popup.beastChatIndex = 0;
     return;
@@ -1698,7 +1721,7 @@ function drawPopup() {
       ctx.save();
       ctx.textAlign = 'center';
       ctx.font = '8px "Press Start 2P", monospace';
-      ctx.fillStyle = line.speaker === 'The Beast' ? '#c0392b' : '#e0c080';
+      ctx.fillStyle = line.speaker === 'The Beast' ? '#c0392b' : line.speaker === 'Carol B' ? '#e090d0' : '#e0c080';
       ctx.fillText(line.speaker, W / 2, H - boxH + 14);
       ctx.fillStyle = '#ecf0f1';
       wrapText(emphText(line.text), W / 2, H - boxH + 32, W - 40, 14);
