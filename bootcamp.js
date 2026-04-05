@@ -11,7 +11,7 @@ const Bootcamp = {
     el.id = 'bootcamp-overlay';
     Object.assign(el.style, {
       position: 'fixed', top: '0', left: '0', width: '100%', height: '100%',
-      display: 'none', zIndex: '10000',
+      display: 'none', zIndex: '10000', background: '#f5f4ef',
     });
     document.body.appendChild(el);
     this.overlay = el;

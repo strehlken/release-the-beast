@@ -571,6 +571,9 @@ function drawPauseMenu() {
 // Input
 const keys = {};
 window.addEventListener('keydown', e => {
+  // Bootcamp overlay owns ALL input when active
+  if (typeof Bootcamp !== 'undefined' && Bootcamp.active) return;
+
   keys[e.key] = true;
 
   // Sprite test mode toggle
@@ -579,7 +582,6 @@ window.addEventListener('keydown', e => {
     if (paused) { spriteTestMode = true; return; }
   }
   if (spriteTestMode) return;
-  if (typeof Bootcamp !== 'undefined' && Bootcamp.active) return; // bootcamp owns input
 
   // Pause menu navigation
   if (paused && !codesScreen) {
