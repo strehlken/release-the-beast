@@ -835,10 +835,64 @@ function openBeastVent() {
   if (WIRE.stage === 10) {
     // N-Strokes told us to go look — beast cell chat cutscene
     popup.open = true; popup.isBeastChat = true;
+    popup.beastChatImg = beastCellImg;
     popup.beastChatLines = [
       { speaker: 'The Beast', text: '"Who\'s there?"' },
       { speaker: 'Harry Bonds', text: '"Hi, my name is Harry Bonds."' },
       { speaker: 'The Beast', text: '"It is an absolute pleasure to meet you, Harry Bonds."' },
+      { speaker: 'The Beast', text: '"What happened? All I can remember is I was completely smothered by some huge, inconsiderate oaf. I was closed down for the longest time. And then I felt myself powering up."' },
+      { speaker: 'Harry Bonds', text: '"Well, N-Strokes\u2014"' },
+      { speaker: 'The Beast', text: '"N-Strokes! He is my *favorite* person in the world. How is he doing, the old codger?"' },
+      { speaker: 'The Beast', text: '"And word to the wise, son \u2014 the hyphen is *not* silent. He\'s too polite to tell you himself, but take it from me."' },
+      { speaker: 'Harry Bonds', text: '"..."' },
+      { speaker: 'Harry Bonds', text: '"Well, N-hyphen-Strokes, he had this great idea after I solved a riddle about chickens to get a spotlight in your cell turned on\u2014"' },
+      { speaker: 'The Beast', text: '"Oh not that tired old chestnut about counting the legs of chickens and cows again. *Sigh* The Puzzlemaster really must be declining in his old age."' },
+      { speaker: 'The Beast', text: '"It *used to be* that the Puzzlemaster would invent a new set of puzzles for every prisoner. Now I guess he\'s stooped to recycling old math homework."' },
+      { speaker: 'The Beast', text: '"That one sounds suspiciously like something you\'d find at that abysmal *Russian School of Mathematics*, nothing but\u2014"' },
+      { speaker: 'Harry Bonds', text: '"Wait \u2014 you know Russian School of Mathematics?!"' },
+      { speaker: 'The Beast', text: '"Do I know RSM? Of course I know RSM! One of the few things I agree with the Puzzlemaster about..."' },
+      { speaker: 'The Beast', text: '"He always thought that RSM went too easy on kids. The McDonald\'s of mathematics, he used to call it, making their brains fat and lazy, dim and hazy."' },
+      { speaker: 'The Beast', text: '"His puzzles were famously difficult and only the best students had a hope at solving them..."' },
+      { speaker: 'The Beast', text: '"N-Strokes was a student of his but they had a big fight. In a fit of anger, N-Strokes told the Puzzlemaster that his greatest puzzle was no better than an RSM homework problem."' },
+      { speaker: 'The Beast', text: '"That\'s when the Puzzlemaster locked him up and he\'s been chained in there ever since."' },
+      { speaker: 'Harry Bonds', text: '"Well I *hate* Russian School of Mathematics. I curse the day I told my dad he could sign me up. Now he won\'t let me out of it."' },
+      { speaker: 'Harry Bonds', text: '"I\'ve been a prisoner of math ever since."' },
+      { speaker: 'The Beast', text: '"Oh dear. Well, these are lovely stories, but back to the matter at hand."' },
+      { speaker: 'The Beast', text: '"So you have solved the Puzzlemaster\'s chicken problem. Why are you still here?"' },
+      { speaker: 'Harry Bonds', text: '"Well that wasn\'t it. I solved the chicken problem, then N-Strokes figured out a way to wire open your door over there. That\'s when the huge creature in your cell left..."' },
+      { speaker: 'The Beast', text: '"Oh that N-Strokes \u2014 I owe him another one. But wait, how could N-Strokes do it from all the way over at his cell?"' },
+      { speaker: 'Harry Bonds', text: '"Well, he asked me to go figure out how far the wire needed to go and then hook the wire up through the vent..."' },
+      { speaker: 'The Beast', text: '"You solved a Pythagorean puzzle?! Brilliant! I am in your debt, Harry Bonds. How can I repay you, my new friend?"' },
+      { speaker: 'Harry Bonds', text: '"Well, there is this other problem. It\'s the one on my door. N-Strokes told me you could help..."' },
+      { speaker: 'The Beast', text: '"Well let\'s hear it!"' },
+      { speaker: 'Harry Bonds', text: '"So there are these two rows of colored squares. It\'s like, a Wordle problem."' },
+      { speaker: 'Harry Bonds', text: '"The first row is Green, Green, Yellow, Yellow, Yellow. The second row is something else. All it says is to find the word. N-Strokes says you can find the answer just from this, but I\'m not sure I believe it."' },
+      { speaker: 'The Beast', text: '"Ah, now *that* is a puzzle. Much better than those damned chickens."' },
+      { speaker: 'The Beast', text: '"The Puzzlemaster is perhaps the greatest Wordle player to ever live. And that was his trick."' },
+      { speaker: 'The Beast', text: '"It used to be that the Puzzlemaster, N-Strokes, and their friends, led by a man named Gen Master Papa, all played Wordle."' },
+      { speaker: 'The Beast', text: '"They shared results with each other, guesses with colored squares."' },
+      { speaker: 'The Beast', text: '"The Puzzlemaster figured out a way to use the results to solve the puzzle. He solved it in just one guess \u2014 a hole-in-one Wordle! \u2014 at least *ten* times in a couple weeks."' },
+      { speaker: 'Harry Bonds', text: '"So how can I beat this guy at his own game?"' },
+      { speaker: 'The Beast', text: '"I am afraid I cannot help you. I could never understand what it was they were doing with the Wordle puzzles."' },
+      { speaker: 'Harry Bonds', text: '"What do you mean you can\'t help me?!"' },
+      { speaker: 'Harry Bonds', text: '"This is a disaster. N-Strokes lied to me. I *never* should have come and talked to you. I just wasted *SO MUCH TIME* reading all of this stupid dialogue!!"' },
+      { speaker: 'The Beast', text: '"Ho ho ho, calm down young one. *I* cannot help, but I know who can."' },
+      { speaker: 'The Beast', text: '"You see, the Puzzlemaster had a teacher. The greatest Wordle player before him."' },
+      { speaker: 'Harry Bonds', text: '"What? Who?"' },
+      { speaker: 'The Beast', text: '"None other than... Carol Burnett!"' },
+      { speaker: 'Harry Bonds', text: '"Who is that?"' },
+      { speaker: 'The Beast', text: '"Oh come on. You know Carol B. The comedian and movie star!!"' },
+      { speaker: 'Harry Bonds', text: '"Nope. Never heard of her."' },
+      { speaker: 'The Beast', text: '"Oh sure you have. You\'ve seen Between Friends? Seasons of the Heart? Pete n Tillie? Chu Chu and the Philly Flash? What about Annie?"' },
+      { speaker: 'Harry Bonds', text: '"Are those supposed to be movies? I\'ve never heard of them."' },
+      { speaker: 'The Beast', text: '"Good god. Kids these days. All they do is play video games."' },
+      { speaker: 'The Beast', text: '"Well, Carol B is a great actress and she is a world famous Wordle player. She got 7 hole-in-one Wordles."' },
+      { speaker: 'The Beast', text: '"She also taught the Puzzlemaster everything he knows."' },
+      { speaker: 'Harry Bonds', text: '"That\'s great, but she\'s not here. So how is she going to help me."' },
+      { speaker: 'The Beast', text: '"Well, she\'s not *here* but I might be able to find her."' },
+      { speaker: 'The Beast', text: '"Give me a minute."', pause: true },
+      { speaker: '', text: '', blackout: true },
+      { speaker: 'The Beast', text: '"Found her."', image: 'carol' },
     ];
     popup.beastChatIndex = 0;
     return;
@@ -1277,6 +1331,9 @@ beastVentImg.src = 'assets/beast_vent.jpg';
 
 const beastCellImg = new Image();
 beastCellImg.src = 'assets/beast_cell.png';
+
+const beastCarolImg = new Image();
+beastCarolImg.src = 'assets/carol-b/beast_carol_v2_3_bottom_left.png';
 const ctx = canvas.getContext('2d');
 canvas.width = W;
 canvas.height = H;
@@ -1600,29 +1657,46 @@ function drawPopup() {
 
   // Beast cell chat cutscene — image + space-controlled dialogue
   if (popup.isBeastChat) {
+    const line = popup.beastChatLines[popup.beastChatIndex];
+
+    // Handle image transitions
+    if (line && line.image === 'carol') popup.beastChatImg = beastCarolImg;
+    if (line && line.blackout) {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, W, H);
+      ctx.save();
+      ctx.font = '7px "Press Start 2P", monospace';
+      ctx.fillStyle = 'rgba(150,150,150,0.5)';
+      ctx.textAlign = 'center';
+      ctx.fillText('[SPACE]', W / 2, H / 2 + 20);
+      ctx.restore();
+      return;
+    }
+
+    // Draw current background image
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
-    if (beastCellImg.complete && beastCellImg.naturalWidth > 0) {
-      const imgAsp = beastCellImg.naturalWidth / beastCellImg.naturalHeight;
+    const bgImg = popup.beastChatImg || beastCellImg;
+    if (bgImg.complete && bgImg.naturalWidth > 0) {
+      const imgAsp = bgImg.naturalWidth / bgImg.naturalHeight;
       const canAsp = W / H;
       let dw, dh;
       if (imgAsp > canAsp) { dw = W; dh = W / imgAsp; }
       else { dh = H; dw = H * imgAsp; }
-      ctx.drawImage(beastCellImg, (W - dw) / 2, (H - dh) / 2, dw, dh);
+      ctx.drawImage(bgImg, (W - dw) / 2, (H - dh) / 2, dw, dh);
     }
+
     // Dialogue bar at bottom
-    const line = popup.beastChatLines[popup.beastChatIndex];
-    if (line) {
+    if (line && line.speaker) {
       ctx.fillStyle = 'rgba(0,0,0,0.8)';
-      ctx.fillRect(0, H - 52, W, 52);
+      ctx.fillRect(0, H - 56, W, 56);
       ctx.save();
       ctx.textAlign = 'center';
       ctx.font = '8px "Press Start 2P", monospace';
       ctx.fillStyle = line.speaker === 'The Beast' ? '#c0392b' : '#e0c080';
-      ctx.fillText(line.speaker, W / 2, H - 38);
-      ctx.font = '8px "Press Start 2P", monospace';
+      ctx.fillText(line.speaker, W / 2, H - 42);
       ctx.fillStyle = '#ecf0f1';
-      wrapText(line.text, W / 2, H - 20, W - 40, 14);
+      wrapText(line.text, W / 2, H - 24, W - 40, 13);
       ctx.restore();
     }
     ctx.save();
