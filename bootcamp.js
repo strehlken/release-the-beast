@@ -160,7 +160,7 @@ function startLesson(N) {
   <div class="controls-row">
     <div class="answer-group">
       <input type="text" id="ansInput" placeholder="?">
-      <button onclick="submitAnswer()">Answer</button>
+      <button id="ansBtn">Answer</button>
       <span class="feedback" id="feedback"></span>
     </div>
     <div class="tiles-row" id="tilesRow" style="position:absolute;left:50%;transform:translateX(-50%);"></div>
@@ -206,6 +206,7 @@ function startLesson(N) {
 
   buildTree(N);
 
+  document.getElementById('ansBtn').addEventListener('click', () => submitAnswer());
   document.getElementById('ansInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') submitAnswer();
   });
@@ -376,9 +377,6 @@ function updateTree() {
     });
   }
 }
-
-window.submitAnswer = submitAnswer;
-window.startLesson = startLesson;
 
 function submitAnswer() {
   const input = document.getElementById('ansInput');
