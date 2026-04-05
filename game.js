@@ -578,7 +578,8 @@ window.addEventListener('keydown', e => {
     if (spriteTestMode) { spriteTestMode = false; return; }
     if (paused) { spriteTestMode = true; return; }
   }
-  if (spriteTestMode) return; // block all other input in test mode
+  if (spriteTestMode) return;
+  if (typeof Bootcamp !== 'undefined' && Bootcamp.active) return; // bootcamp owns input
 
   // Pause menu navigation
   if (paused && !codesScreen) {
