@@ -89,7 +89,7 @@ function startLesson(N) {
 
   #bootcamp-overlay .controls-row {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 24px; flex-shrink: 0;
+    padding: 14px 24px; flex-shrink: 0; position: relative;
     border-bottom: 1px solid #ddd; background: #f5f4ef;
   }
 
@@ -160,10 +160,10 @@ function startLesson(N) {
   <div class="controls-row">
     <div class="answer-group">
       <input type="text" id="ansInput" placeholder="?">
-      <button id="ansBtn">Answer</button>
+      <button onclick="submitAnswer()">Answer</button>
       <span class="feedback" id="feedback"></span>
     </div>
-    <div class="tiles-row" id="tilesRow"></div>
+    <div class="tiles-row" id="tilesRow" style="position:absolute;left:50%;transform:translateX(-50%);"></div>
     <div class="nav-group" id="navGroup">
       <span class="label"># tiles:</span>
     </div>
@@ -206,11 +206,10 @@ function startLesson(N) {
 
   buildTree(N);
 
-  const ansInput = app.querySelector('#ansInput');
-  const ansBtn = app.querySelector('#ansBtn');
-  ansBtn.addEventListener('click', submitAnswer);
-  ansInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitAnswer(); });
-  ansInput.focus();
+  document.getElementById('ansInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitAnswer();
+  });
+  document.getElementById('ansInput').focus();
 }
 
 function cycleTile(tile, idx) {
@@ -376,19 +375,18 @@ function updateTree() {
 }
 
 function submitAnswer() {
-  const input = getApp().querySelector('#ansInput');
+  const input = document.getElementById('ansInput');
   const total = Math.pow(3, currentN);
   if (input.value.trim() === String(total)) {
     feedbackEl.textContent = 'Correct!';
     feedbackEl.style.color = '#6aaa64';
     input.disabled = true;
-    getApp().querySelector('#ansBtn').disabled = true;
     if (currentN < MAX_N) {
       highestUnlocked = Math.max(highestUnlocked, currentN + 1);
       setTimeout(() => startLesson(currentN + 1), 800);
     } else {
-      getApp().querySelector('#dialogueText').textContent =
-        '"3 × 3 × 3 × 3 × 3 = 243. A five-letter Wordle row has 243 possible patterns. Now you\'re thinking like a Wordle player."';
+      document.getElementById('dialogueText').textContent =
+        '"3 \u00d7 3 \u00d7 3 = 27. Every square you add multiplies by 3. Now you\'re thinking like a Wordle player."';
       setTimeout(() => Bootcamp.hide(), 4000);
     }
   } else {
