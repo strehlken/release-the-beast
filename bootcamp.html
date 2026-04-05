@@ -180,6 +180,94 @@
     color: #999;
   }
 
+  /* --- Boring button --- */
+  .boring-btn {
+    padding: 6px 14px; font-size: 13px; cursor: pointer;
+    background: #f0e8e0; color: #886; border: 2px solid #ddc;
+    border-radius: 6px; font-family: 'DM Sans', system-ui, sans-serif;
+    font-weight: 500; font-style: italic; transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .boring-btn:hover { background: #e8ddd0; }
+
+  /* --- Cutscene overlay --- */
+  .cutscene {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #000; display: flex; flex-direction: column;
+    z-index: 100;
+  }
+  .cutscene-img {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .cutscene-img img {
+    max-width: 100%; max-height: 100%; object-fit: contain;
+  }
+  .cutscene-bar {
+    background: rgba(0,0,0,0.85); padding: 14px 20px;
+    min-height: 80px; display: flex; flex-direction: column;
+    justify-content: center; gap: 4px;
+  }
+  .cutscene-bar .cs-speaker {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 13px; font-weight: 700;
+  }
+  .cutscene-bar .cs-text {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 14px; color: #eee; line-height: 1.5;
+  }
+  .cutscene-bar .cs-hint {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 11px; color: rgba(150,150,150,0.5);
+    text-align: center; margin-top: 4px;
+  }
+
+  /* --- Power mode (x3 interface) --- */
+  .power-zone {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 20px; padding: 20px;
+  }
+  .power-chain {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 24px; font-weight: 600; color: #333;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .power-chain .x3-box {
+    background: #6aaa64; color: white; padding: 8px 16px;
+    border-radius: 6px; font-size: 20px; font-weight: 700;
+    cursor: default;
+  }
+  .power-chain .x3-btn {
+    background: #e8e8e3; color: #555; padding: 8px 16px;
+    border-radius: 6px; font-size: 20px; font-weight: 700;
+    cursor: pointer; border: 2px solid #ccc; transition: background 0.15s;
+  }
+  .power-chain .x3-btn:hover { background: #ddd; }
+  .power-chain .equals { color: #888; }
+  .power-chain .result { color: #2a2a3a; font-size: 28px; }
+  .power-expr {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 18px; color: #888;
+  }
+  .power-answer {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .power-answer input {
+    width: 80px; padding: 8px 10px; font-size: 18px; text-align: center;
+    border: 2px solid #ccc; border-radius: 6px; outline: none;
+    font-family: 'DM Sans', system-ui, sans-serif;
+  }
+  .power-answer input:focus { border-color: #6aaa64; }
+  .power-answer button {
+    padding: 8px 16px; font-size: 15px; cursor: pointer;
+    background: #e8e8e3; color: #444; border: 2px solid #ccc; border-radius: 6px;
+    font-family: 'DM Sans', system-ui, sans-serif; font-weight: 500;
+  }
+  .power-answer button:hover { background: #ddd; }
+  .power-answer .feedback { font-size: 14px; }
+
   /* --- Mobile --- */
   @media (max-width: 600px) {
     .dialogue-bar { font-size: 14px; padding: 10px 14px; }
@@ -238,6 +326,7 @@ function startLesson(N) {
         <input type="text" id="ansInput" placeholder="?">
         <button onclick="submitAnswer()">Answer</button>
         <span class="feedback" id="feedback"></span>
+        ${N >= 4 ? '<button class="boring-btn" onclick="boringEscape()">Uh... Carol? It\'s getting boring to count...</button>' : ''}
       </div>
       <div class="tiles-row" id="tilesRow"></div>
       <div class="nav-group" id="navGroup">
@@ -488,6 +577,151 @@ function submitAnswer() {
   } else {
     feedbackEl.textContent = 'Try again.';
     feedbackEl.style.color = '#c0392b';
+    input.value = '';
+    input.focus();
+  }
+}
+
+// === BORING ESCAPE → Carol cutscene → Power mode ===
+
+function boringEscape() {
+  const carolLines = [
+    { speaker: 'Carol B', color: '#e090d0', text: '"Lucky for you, there\'s a better way."' },
+    { speaker: 'Carol B', color: '#e090d0', text: '"Think about the smaller problems you solved. 3 colorings for one tile. 9 colorings for two tiles. 27 colorings for three tiles. Notice anything?"' },
+    { speaker: 'Harry Bonds', color: '#e0c080', text: '"Wait! Those are the powers of 3!"' },
+    { speaker: 'Carol B', color: '#e090d0', text: '"Bingo. 9 = 3². 27 = 3³. And in general, the number of ways to color N tiles is 3 to the power N!"' },
+    { speaker: 'Harry Bonds', color: '#e0c080', text: '"So...."' },
+    { speaker: 'Carol B', color: '#e090d0', text: '"So that means you can tell me the answer for a LOT more tiles, soldier!"' },
+  ];
+  showCutscene(carolLines, () => startPowerMode());
+}
+
+function showCutscene(lines, onDone) {
+  const app = document.getElementById('app');
+  let idx = 0;
+
+  function render() {
+    const line = lines[idx];
+    app.innerHTML = `
+      <div class="cutscene">
+        <div class="cutscene-img">
+          <img src="assets/carol-b/beast_carol_v2_3_bottom_left.png">
+        </div>
+        <div class="cutscene-bar">
+          <div class="cs-speaker" style="color:${line.color}">${line.speaker}</div>
+          <div class="cs-text">${line.text}</div>
+          <div class="cs-hint">[SPACE]</div>
+        </div>
+      </div>
+    `;
+    document.addEventListener('keydown', advance);
+    app.querySelector('.cutscene').addEventListener('click', advance);
+  }
+
+  function advance(e) {
+    if (e.type === 'keydown' && e.key !== ' ') return;
+    document.removeEventListener('keydown', advance);
+    idx++;
+    if (idx < lines.length) {
+      render();
+    } else {
+      if (onDone) onDone();
+    }
+  }
+
+  render();
+}
+
+let powerN = 4;
+let powerAsking = 4;
+
+function startPowerMode() {
+  powerN = 4;
+  powerAsking = 4;
+  renderPowerMode();
+}
+
+function renderPowerMode() {
+  const app = document.getElementById('app');
+  const total = Math.pow(3, powerN);
+  const boxes = [];
+  for (let i = 0; i < powerN; i++) boxes.push('<span class="x3-box">×3</span>');
+  if (powerN < 10) boxes.push('<span class="x3-btn" onclick="addX3()">×3</span>');
+
+  app.innerHTML = `
+    <div class="bootcamp">
+      <div class="dialogue-bar">
+        <span class="speaker">Carol B</span>
+        <span id="dialogueText">"Now, how many ways to color ${powerAsking} squares?"</span>
+      </div>
+      <div class="power-zone">
+        <div class="power-chain">
+          ${boxes.join(' ')}
+          <span class="equals">=</span>
+          <span class="power-expr">3<sup>${powerN}</sup></span>
+          <span class="equals">=</span>
+          <span class="result">${total}</span>
+        </div>
+        <div class="power-answer">
+          <input type="text" id="powerInput" placeholder="?">
+          <button onclick="submitPower()">Answer</button>
+          <span class="feedback" id="powerFeedback"></span>
+        </div>
+      </div>
+      <div class="bottom-zone">
+        <div class="counter">Click ×3 to add another tile</div>
+      </div>
+    </div>
+  `;
+  document.getElementById('powerInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitPower();
+  });
+  setTimeout(() => {
+    const inp = document.getElementById('powerInput');
+    if (inp) inp.focus();
+  }, 50);
+}
+
+function addX3() {
+  if (powerN < 10) {
+    powerN++;
+    renderPowerMode();
+  }
+}
+
+function submitPower() {
+  const input = document.getElementById('powerInput');
+  const fb = document.getElementById('powerFeedback');
+  const expected = Math.pow(3, powerAsking);
+  if (input.value.trim() === String(expected)) {
+    fb.textContent = 'Correct!';
+    fb.style.color = '#6aaa64';
+    input.disabled = true;
+    if (powerAsking < 10) {
+      powerAsking++;
+      setTimeout(() => {
+        powerN = Math.max(powerN, powerAsking);
+        renderPowerMode();
+      }, 600);
+    }
+    if (powerAsking > 10) {
+      // Done — final message about 5 tiles
+      setTimeout(() => {
+        const carolEnd = [
+          { speaker: 'Carol B', color: '#e090d0', text: '"Great. But we really care about 5 tiles. That\'s a full Wordle row."' },
+          { speaker: 'Carol B', color: '#e090d0', text: '"You got it. 243 patterns. That\'s what we\'re dealing with."' },
+          { speaker: 'Carol B', color: '#e090d0', text: '"Now you know the size of the battlefield. Next time, we figure out how to fight."' },
+        ];
+        showCutscene(carolEnd, () => {
+          if (window.parent && window.parent.Bootcamp) {
+            window.parent.Bootcamp.hide();
+          }
+        });
+      }, 800);
+    }
+  } else {
+    fb.textContent = 'Try again.';
+    fb.style.color = '#c0392b';
     input.value = '';
     input.focus();
   }
