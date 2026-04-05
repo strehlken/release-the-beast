@@ -616,6 +616,17 @@ window.addEventListener('keydown', e => {
     if (popup.open && popup.isBeastChat) {
       if (popup.beastChatIndex < popup.beastChatLines.length - 1) {
         popup.beastChatIndex++;
+        // Check if this line launches bootcamp
+        const line = popup.beastChatLines[popup.beastChatIndex];
+        if (line && line.launchBootcamp) {
+          closePopup();
+          WIRE.stage = 11;
+          Bootcamp.onComplete = () => {
+            const code = getStateCode();
+            if (code) setTimeout(() => flashCode(code), 500);
+          };
+          setTimeout(() => Bootcamp.show(line.launchBootcamp), 300);
+        }
       } else {
         WIRE.stage = 11;
         closePopup();
@@ -916,6 +927,7 @@ function openBeastVent() {
       { speaker: 'Harry Bonds', text: '"Can you teach me the secret ways?"' },
       { speaker: 'Carol B', text: '"I can, but you better roll your sleeves up and get ready for some work, son."' },
       { speaker: 'The Beast', text: '"Oh I\'m just so *excited*! All my friends are playing together!"' },
+      { speaker: 'Carol B', text: '"Welcome to Wordle bootcamp, kid!"', launchBootcamp: 'single-square' },
     ];
     popup.beastChatIndex = 0;
     return;
