@@ -205,7 +205,7 @@ const VENT = {
 // === STATE-BASED SAVE CODE SYSTEM ===
 // Milestones are bits in a bitmask. Code table maps bitmask → code string.
 // For now codes are simple letters. Later: make them complex all at once here.
-const MILESTONES = { farmer: 1, wire: 2, anger: 4, beastViewed: 8 };
+const MILESTONES = { farmer: 1, wire: 2, anger: 4, beastViewed: 8, beastChat: 16 };
 
 const CODE_TABLE = {
   1:  'A',  // farmer
@@ -215,6 +215,7 @@ const CODE_TABLE = {
   11: 'E',  // farmer + wire + beastViewed
   13: 'F',  // farmer + anger + beastViewed (shouldn't happen but cover it)
   15: 'G',  // farmer + wire + anger + beastViewed
+  31: 'H',  // farmer + wire + anger + beastViewed + beastChat
 };
 
 // Reverse lookup: code → bitmask
@@ -227,6 +228,7 @@ function getStateBitmask() {
   if (WIRE.stage >= 5 && WIRE.stage !== 6) bits |= MILESTONES.wire;
   if (wordleTeach.phase >= 3) bits |= MILESTONES.anger;
   if (WIRE.stage >= 9) bits |= MILESTONES.beastViewed;
+  if (WIRE.stage >= 11) bits |= MILESTONES.beastChat;
   return bits;
 }
 
@@ -261,6 +263,10 @@ function restoreFromStateCode(code) {
   }
   if (bits & MILESTONES.beastViewed) {
     WIRE.stage = 9;
+  }
+  if (bits & MILESTONES.beastChat) {
+    WIRE.stage = 11;
+    nstrokesExplainedSaves = true;
   }
   return true;
 }
@@ -838,9 +844,13 @@ async function submitDoorAnswer() {
 
 function openBeastVent() {
   if (WIRE.stage >= 11) {
-    // After beast chat completed — show beast_cell image again
-    popup.open = true; popup.isImage = true;
-    popup.imageOverride = beastCellImg;
+    // After beast chat — Carol asks if ready, button to launch bootcamp
+    popup.open = true; popup.isBeastChat = true;
+    popup.beastChatImg = beastCarolImg;
+    popup.beastChatLines = [
+      { speaker: 'Carol B', text: '"Ready to get back to business?"', launchBootcamp: 'single-square' },
+    ];
+    popup.beastChatIndex = 0;
     return;
   }
   if (WIRE.stage === 10) {
