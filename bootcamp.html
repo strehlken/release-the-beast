@@ -256,31 +256,33 @@
   .power-zone {
     flex: 1; display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    gap: 20px; padding: 20px;
+    gap: 28px; padding: 20px;
   }
   .power-chain {
-    display: flex; align-items: center; gap: 10px;
+    display: flex; align-items: center; gap: 6px;
     font-family: 'DM Sans', system-ui, sans-serif;
-    font-size: 24px; font-weight: 600; color: #333;
+    font-size: 15px; font-weight: 500; color: #555;
     flex-wrap: wrap; justify-content: center;
   }
-  .power-chain .x3-box {
-    background: #6aaa64; color: white; padding: 8px 16px;
-    border-radius: 6px; font-size: 20px; font-weight: 700;
-    cursor: default;
+  .power-chain .factor {
+    background: #eae4da; color: #555; padding: 6px 10px;
+    border-radius: 6px; font-size: 14px; white-space: nowrap;
   }
-  .power-chain .x3-btn {
-    background: #e8e8e3; color: #555; padding: 8px 16px;
-    border-radius: 6px; font-size: 20px; font-weight: 700;
-    cursor: pointer; border: 2px solid #ccc; transition: background 0.15s;
+  .power-chain .times { color: #999; font-weight: 700; font-size: 18px; }
+  .power-chain .equals { color: #888; font-weight: 700; font-size: 18px; }
+  .power-chain .summary {
+    font-weight: 700; color: #1a1a2a; font-size: 17px;
   }
-  .power-chain .x3-btn:hover { background: #ddd; }
-  .power-chain .equals { color: #888; }
-  .power-chain .result { color: #2a2a3a; font-size: 28px; }
-  .power-expr {
+  .power-controls {
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+  }
+  .x3-add-btn {
+    padding: 10px 22px; font-size: 16px; font-weight: 700;
     font-family: 'DM Sans', system-ui, sans-serif;
-    font-size: 18px; color: #888;
+    background: #e8e8e3; color: #555; border: 2px solid #ccc;
+    border-radius: 8px; cursor: pointer; transition: background 0.15s;
   }
+  .x3-add-btn:hover { background: #ddd; }
   .power-answer {
     display: flex; align-items: center; gap: 8px;
   }
@@ -289,7 +291,7 @@
     border: 2px solid #ccc; border-radius: 6px; outline: none;
     font-family: 'DM Sans', system-ui, sans-serif;
   }
-  .power-answer input:focus { border-color: #6aaa64; }
+  .power-answer input:focus { border-color: #e67e22; }
   .power-answer button {
     padding: 8px 16px; font-size: 15px; cursor: pointer;
     background: #e8e8e3; color: #444; border: 2px solid #ccc; border-radius: 6px;
@@ -707,21 +709,37 @@ function exitBootcamp() {
 window.addEventListener('load', () => window.focus());
 document.addEventListener('click', () => window.focus());
 
-let powerN = 4;
+const MAX_POWER = 8;
 let powerAsking = 4;
+let powerClicks = 0;  // how many factors the player has added so far
+
+const ORDINALS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth'];
 
 function startPowerMode() {
-  powerN = 4;
   powerAsking = 4;
+  powerClicks = 0;
   renderPowerMode();
 }
 
 function renderPowerMode() {
   const app = document.getElementById('app');
-  const total = Math.pow(3, powerN);
-  const boxes = [];
-  for (let i = 0; i < powerN; i++) boxes.push('<span class="x3-box">×3</span>');
-  if (powerN < 10) boxes.push('<span class="x3-btn" onclick="addX3()">×3</span>');
+
+  // Build the factor chain from clicks so far
+  let chainHTML = '';
+  if (powerClicks > 0) {
+    const factors = [];
+    for (let i = 0; i < powerClicks; i++) {
+      factors.push(`<span class="factor">(3 ways for ${ORDINALS[i]} square)</span>`);
+    }
+    chainHTML = factors.join('<span class="times">×</span>');
+    if (powerClicks === powerAsking) {
+      chainHTML += `<span class="equals">=</span>`;
+      chainHTML += `<span class="summary">3<sup>${powerAsking}</sup> = ${Math.pow(3, powerAsking)}</span>`;
+    }
+  }
+
+  const needMoreClicks = powerClicks < powerAsking;
+  const readyToAnswer = powerClicks === powerAsking;
 
   app.innerHTML = `
     <div class="bootcamp">
@@ -730,38 +748,38 @@ function renderPowerMode() {
         <span id="dialogueText">"Now, how many ways to color ${powerAsking} squares?"</span>
       </div>
       <div class="power-zone">
-        <div class="power-chain">
-          ${boxes.join(' ')}
-          <span class="equals">=</span>
-          <span class="power-expr">3<sup>${powerN}</sup></span>
-          <span class="equals">=</span>
-          <span class="result">${total}</span>
-        </div>
-        <div class="power-answer">
-          <input type="text" id="powerInput" placeholder="?">
-          <button onclick="submitPower()">Answer</button>
-          <span class="feedback" id="powerFeedback"></span>
+        <div class="power-chain" id="powerChain">${chainHTML}</div>
+        <div class="power-controls">
+          ${needMoreClicks ? '<button class="x3-add-btn" onclick="addFactor()">× 3 ways for ' + ORDINALS[powerClicks] + ' square</button>' : ''}
+          ${readyToAnswer ? `
+            <div class="power-answer">
+              <input type="text" id="powerInput" placeholder="?">
+              <button onclick="submitPower()">Answer</button>
+              <span class="feedback" id="powerFeedback"></span>
+            </div>
+          ` : ''}
         </div>
       </div>
       <div class="bottom-zone">
-        <div class="counter">Click ×3 to add another tile</div>
+        <div class="counter">${powerClicks === 0 ? 'Build the multiplication chain!' : powerClicks + ' of ' + powerAsking + ' factors'}</div>
       </div>
     </div>
   `;
-  document.getElementById('powerInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') submitPower();
-  });
-  setTimeout(() => {
-    const inp = document.getElementById('powerInput');
-    if (inp) inp.focus();
-  }, 50);
+
+  if (readyToAnswer) {
+    document.getElementById('powerInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') submitPower();
+    });
+    setTimeout(() => {
+      const inp = document.getElementById('powerInput');
+      if (inp) inp.focus();
+    }, 50);
+  }
 }
 
-function addX3() {
-  if (powerN < 10) {
-    powerN++;
-    renderPowerMode();
-  }
+function addFactor() {
+  powerClicks++;
+  renderPowerMode();
 }
 
 function submitPower() {
@@ -772,14 +790,13 @@ function submitPower() {
     fb.textContent = 'Correct!';
     fb.style.color = '#6aaa64';
     input.disabled = true;
-    if (powerAsking < 10) {
-      powerAsking++;
+    if (powerAsking < MAX_POWER) {
       setTimeout(() => {
-        powerN = Math.max(powerN, powerAsking);
+        powerAsking++;
+        powerClicks = 0;
         renderPowerMode();
       }, 600);
-    }
-    if (powerAsking > 10) {
+    } else {
       // Done — final message about 5 tiles
       setTimeout(() => {
         const carolEnd = [
