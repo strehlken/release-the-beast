@@ -705,6 +705,11 @@ function exitBootcamp() {
   }
 }
 
+// Global ESC handler — always available to exit bootcamp
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') exitBootcamp();
+});
+
 // Ensure iframe gets keyboard focus
 window.addEventListener('load', () => window.focus());
 document.addEventListener('click', () => window.focus());

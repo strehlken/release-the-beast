@@ -205,7 +205,7 @@ const VENT = {
 // === STATE-BASED SAVE CODE SYSTEM ===
 // Milestones are bits in a bitmask. Code table maps bitmask → code string.
 // For now codes are simple letters. Later: make them complex all at once here.
-const MILESTONES = { farmer: 1, wire: 2, anger: 4, beastViewed: 8, beastChat: 16 };
+const MILESTONES = { farmer: 1, wire: 2, anger: 4, beastViewed: 8, beastChat: 16, bootcampPh1: 32 };
 
 const CODE_TABLE = {
   1:  'A',  // farmer
@@ -216,6 +216,7 @@ const CODE_TABLE = {
   13: 'F',  // farmer + anger + beastViewed (shouldn't happen but cover it)
   15: 'G',  // farmer + wire + anger + beastViewed
   31: 'H',  // farmer + wire + anger + beastViewed + beastChat
+  63: 'J',  // all above + bootcamp phase 1
 };
 
 // Reverse lookup: code → bitmask
@@ -229,6 +230,7 @@ function getStateBitmask() {
   if (wordleTeach.phase >= 3) bits |= MILESTONES.anger;
   if (WIRE.stage >= 9) bits |= MILESTONES.beastViewed;
   if (WIRE.stage >= 11) bits |= MILESTONES.beastChat;
+  if (Bootcamp.phase1Done) bits |= MILESTONES.bootcampPh1;
   return bits;
 }
 
@@ -267,6 +269,9 @@ function restoreFromStateCode(code) {
   if (bits & MILESTONES.beastChat) {
     WIRE.stage = 11;
     nstrokesExplainedSaves = true;
+  }
+  if (bits & MILESTONES.bootcampPh1) {
+    Bootcamp.phase1Done = true;
   }
   return true;
 }
@@ -631,7 +636,10 @@ window.addEventListener('keydown', e => {
       if (curLine && curLine.launchBootcamp) {
         const lessonId = curLine.launchBootcamp;
         closePopup();
-        Bootcamp.onComplete = () => {};
+        Bootcamp.onComplete = () => {
+          // Show save code after returning from bootcamp
+          openSolvedPopup(STATIONS[0]);
+        };
         setTimeout(() => Bootcamp.show(lessonId), 300);
         return;
       }
