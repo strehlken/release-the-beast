@@ -643,9 +643,12 @@ window.addEventListener('keydown', e => {
       if (curLine && curLine.launchBootcamp) {
         const lessonId = curLine.launchBootcamp;
         closePopup();
+        const hadPh1 = Bootcamp.phase1Done;
         Bootcamp.onComplete = () => {
-          // Show save code after returning from bootcamp
-          openSolvedPopup(STATIONS[0]);
+          // Show save code only the first time Phase 1 is completed
+          if (!hadPh1 && Bootcamp.phase1Done) {
+            openSolvedPopup(STATIONS[0]);
+          }
         };
         setTimeout(() => Bootcamp.show(lessonId), 300);
         return;
