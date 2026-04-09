@@ -572,7 +572,10 @@ function drawPauseMenu() {
 const keys = {};
 window.addEventListener('keydown', e => {
   // Bootcamp overlay owns ALL input when active
-  if (typeof Bootcamp !== 'undefined' && Bootcamp.active) return;
+  if (typeof Bootcamp !== 'undefined' && Bootcamp.active) {
+    if (e.key === 'Escape') Bootcamp.hide();
+    return;
+  }
 
   keys[e.key] = true;
 
