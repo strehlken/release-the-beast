@@ -222,33 +222,25 @@
   /* --- Cutscene overlay --- */
   .cutscene {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: #000; display: flex; flex-direction: column;
+    background: #1a1a2a; display: flex; align-items: center; justify-content: center;
     z-index: 100;
   }
-  .cutscene-img {
-    flex: 1; display: flex; align-items: center; justify-content: center;
-    overflow: hidden;
+  .cutscene-content {
+    max-width: 600px; padding: 40px; text-align: center;
+    display: flex; flex-direction: column; gap: 12px;
   }
-  .cutscene-img img {
-    max-width: 100%; max-height: 100%; object-fit: contain;
-  }
-  .cutscene-bar {
-    background: rgba(0,0,0,0.85); padding: 18px 24px;
-    min-height: 100px; display: flex; flex-direction: column;
-    justify-content: center; gap: 6px;
-  }
-  .cutscene-bar .cs-speaker {
+  .cutscene-content .cs-speaker {
     font-family: 'DM Sans', system-ui, sans-serif;
-    font-size: 17px; font-weight: 700;
+    font-size: 18px; font-weight: 700;
   }
-  .cutscene-bar .cs-text {
+  .cutscene-content .cs-text {
     font-family: 'DM Sans', system-ui, sans-serif;
-    font-size: 18px; color: #eee; line-height: 1.5;
+    font-size: 20px; color: #eee; line-height: 1.6;
   }
-  .cutscene-bar .cs-hint {
+  .cutscene-content .cs-hint {
     font-family: 'DM Sans', system-ui, sans-serif;
     font-size: 13px; color: rgba(150,150,150,0.5);
-    text-align: center; margin-top: 6px;
+    margin-top: 12px;
   }
 
   /* --- Power mode (x3 interface) --- */
@@ -296,6 +288,35 @@
   }
   .power-answer button:hover { background: #ddd; }
   .power-answer .feedback { font-size: 14px; }
+
+  /* --- Phase selector --- */
+  .phase-select {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    height: 100vh; gap: 24px;
+    background: #1a1a2a;
+  }
+  .phase-select h2 {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 22px; color: #e090d0; font-weight: 700;
+  }
+  .phase-select .phase-buttons {
+    display: flex; gap: 20px;
+  }
+  .phase-select .phase-btn {
+    padding: 16px 32px; font-size: 17px; font-weight: 600;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background: #2a2a3a; color: #eee; border: 2px solid #4a4a5a;
+    border-radius: 10px; cursor: pointer; transition: all 0.15s;
+    text-align: center; line-height: 1.5;
+  }
+  .phase-select .phase-btn:hover { background: #3a3a4a; border-color: #6a6a7a; }
+  .phase-select .phase-btn.locked {
+    opacity: 0.35; cursor: not-allowed;
+  }
+  .phase-select .phase-desc {
+    font-size: 13px; color: #888; margin-top: 4px;
+  }
 
   /* --- Mobile --- */
   @media (max-width: 600px) {
@@ -594,15 +615,11 @@ function submitAnswer() {
       highestUnlocked = Math.max(highestUnlocked, currentN + 1);
       setTimeout(() => startLesson(currentN + 1), 800);
     } else {
-      const msg = {
-        3: '"3 × 3 × 3 = 27. Every square you add multiplies by 3."',
-        4: '"3 × 3 × 3 × 3 = 81. See? Every new square triples the possibilities. Now you\'re thinking like a Wordle player."',
-      };
-      document.getElementById('dialogueText').textContent = msg[currentN] || '"Well done!"';
-      // Notify parent game
-      if (window.parent && window.parent.Bootcamp) {
-        setTimeout(() => window.parent.Bootcamp.hide(), 3000);
-      }
+      // Phase I complete — show message then go to phase selector
+      phase1Complete = true;
+      document.getElementById('dialogueText').textContent =
+        '"3 × 3 × 3 × 3 = 81. See? Every new square triples the possibilities. Now you\'re thinking like a Wordle player."';
+      setTimeout(() => showPhaseSelect(), 2500);
     }
   } else {
     feedbackEl.textContent = 'Try again.';
@@ -634,13 +651,10 @@ function showCutscene(lines, onDone) {
     const line = lines[idx];
     app.innerHTML = `
       <div class="cutscene">
-        <div class="cutscene-img">
-          <img src="assets/carol-b/beast_carol_v2_3_bottom_left.png">
-        </div>
-        <div class="cutscene-bar">
+        <div class="cutscene-content">
           <div class="cs-speaker" style="color:${line.color}">${line.speaker}</div>
           <div class="cs-text">${line.text}</div>
-          <div class="cs-hint">[SPACE]</div>
+          <div class="cs-hint">[SPACE] to continue &nbsp;·&nbsp; [ESC] to exit</div>
         </div>
       </div>
     `;
@@ -649,6 +663,11 @@ function showCutscene(lines, onDone) {
   }
 
   function advance(e) {
+    if (e.type === 'keydown' && e.key === 'Escape') {
+      document.removeEventListener('keydown', advance);
+      exitBootcamp();
+      return;
+    }
     if (e.type === 'keydown' && e.key !== ' ') return;
     document.removeEventListener('keydown', advance);
     idx++;
@@ -660,6 +679,12 @@ function showCutscene(lines, onDone) {
   }
 
   render();
+}
+
+function exitBootcamp() {
+  if (window.parent && window.parent.Bootcamp) {
+    window.parent.Bootcamp.hide();
+  }
 }
 
 let powerN = 4;
@@ -757,7 +782,36 @@ function submitPower() {
   }
 }
 
-startLesson(1);
+let phase1Complete = false;
+
+function showPhaseSelect() {
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="phase-select">
+      <h2>Carol B's Wordle Bootcamp</h2>
+      <div class="phase-buttons">
+        <button class="phase-btn" onclick="startLesson(1)">
+          Phase I<br>
+          <span class="phase-desc">Counting Combinations</span>
+        </button>
+        <button class="phase-btn ${phase1Complete ? '' : 'locked'}" id="phase2Btn"
+          onclick="${phase1Complete ? 'boringEscape()' : ''}">
+          Phase II<br>
+          <span class="phase-desc">Powers of 3</span>
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// Check URL param for phase selection (set by bootcamp.js on re-entry)
+const params = new URLSearchParams(window.location.search);
+if (params.get('phases') === '1') {
+  phase1Complete = true;
+  showPhaseSelect();
+} else {
+  startLesson(1);
+}
 </script>
 </body>
 </html>

@@ -6,6 +6,7 @@ const Bootcamp = {
   iframe: null,
   active: false,
   onComplete: null,
+  phase1Done: false,
 
   init() {
     if (this.overlay) return;
@@ -28,13 +29,15 @@ const Bootcamp = {
     this.init();
     this.overlay.style.display = 'block';
     this.active = true;
-    // Reload the iframe to reset state
-    this.iframe.src = 'bootcamp.html';
+    // Reload — show phase selector if Phase I already done
+    const src = this.phase1Done ? 'bootcamp.html?phases=1' : 'bootcamp.html';
+    this.iframe.src = src;
   },
 
   hide() {
     if (this.overlay) this.overlay.style.display = 'none';
     this.active = false;
+    this.phase1Done = true; // they've been through at least once
     if (this.onComplete) this.onComplete();
   },
 };
