@@ -573,6 +573,13 @@ function drawPauseMenu() {
   ctx.restore();
 }
 
+// Listen for bootcamp exit message from iframe
+window.addEventListener('message', e => {
+  if (e.data && e.data.type === 'bootcamp-exit') {
+    if (typeof Bootcamp !== 'undefined' && Bootcamp.active) Bootcamp.hide();
+  }
+});
+
 // Input
 const keys = {};
 window.addEventListener('keydown', e => {

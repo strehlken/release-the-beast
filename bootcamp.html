@@ -700,15 +700,24 @@ function showCutscene(lines, onDone) {
 }
 
 function exitBootcamp() {
-  if (window.parent && window.parent.Bootcamp) {
-    window.parent.Bootcamp.hide();
-  }
+  // Try direct access first, then postMessage as fallback
+  try {
+    if (window.parent && window.parent.Bootcamp) {
+      window.parent.Bootcamp.hide();
+      return;
+    }
+  } catch(e) {}
+  window.parent.postMessage({ type: 'bootcamp-exit' }, '*');
 }
 
 // Global ESC handler — always available to exit bootcamp
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') exitBootcamp();
-});
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    e.stopPropagation();
+    exitBootcamp();
+  }
+}, true);
 
 // Ensure iframe gets keyboard focus
 window.addEventListener('load', () => window.focus());
