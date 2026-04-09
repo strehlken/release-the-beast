@@ -176,19 +176,48 @@
     background: #f5f4ef;
   }
   .counter {
-    font-size: 15px;
-    color: #999;
+    font-size: 22px;
+    font-weight: 700;
+    color: #6aaa64;
   }
 
   /* --- Boring button --- */
   .boring-btn {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     padding: 6px 14px; font-size: 13px; cursor: pointer;
     background: #f0e8e0; color: #886; border: 2px solid #ddc;
     border-radius: 6px; font-family: 'DM Sans', system-ui, sans-serif;
     font-weight: 500; font-style: italic; transition: background 0.15s;
     white-space: nowrap;
+    z-index: 5;
   }
   .boring-btn:hover { background: #e8ddd0; }
+
+  /* --- Click-here hint for lesson 1 --- */
+  .click-hint {
+    position: absolute;
+    left: calc(50% + 40px);
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #e67e22;
+    animation: hint-pulse 1.5s ease-in-out infinite;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .click-hint .hint-arrow {
+    font-size: 20px;
+  }
+  @keyframes hint-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
 
   /* --- Cutscene overlay --- */
   .cutscene {
@@ -326,9 +355,10 @@ function startLesson(N) {
         <input type="text" id="ansInput" placeholder="?">
         <button onclick="submitAnswer()">Answer</button>
         <span class="feedback" id="feedback"></span>
-        ${N >= 4 ? '<button class="boring-btn" onclick="boringEscape()">Uh... Carol? It\'s getting boring to count...</button>' : ''}
       </div>
+      ${N >= 4 ? '<button class="boring-btn" onclick="boringEscape()">Uh... Carol? It\'s getting boring to count...</button>' : ''}
       <div class="tiles-row" id="tilesRow"></div>
+      ${N === 1 ? '<div class="click-hint"><span class="hint-arrow">\u2190</span> click the tile!</div>' : ''}
       <div class="nav-group" id="navGroup">
         <span class="label"># tiles:</span>
       </div>
